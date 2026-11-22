@@ -1,0 +1,15 @@
+{
+  "id": "YOUR_USERNAME/edr-paper",
+  "title": "EDR PAPER",
+  "code_file": "entry.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "YOUR_USERNAME/edr-code"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

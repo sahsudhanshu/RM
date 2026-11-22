@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "queue-aware-uav-ugv"
+version = "0.1.0"
+description = "Queue-aware virtual-slot assignment for cooperative UAV-UGV routing"
+requires-python = ">=3.10"
+dependencies = [
+    "networkx>=3.0",
+    "numpy>=1.24",
+    "psutil>=5.9",
+    "torch>=2.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "matplotlib>=3.6"]
+viz = ["matplotlib>=3.6"]
+
+[project.scripts]
+uav-ugv = "uav_ugv.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+pythonpath = ["src"]
+testpaths = ["tests"]

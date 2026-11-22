@@ -1,0 +1,499 @@
+<meta charset="utf-8">
+<title>UAV–UGV Mission Replay</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a field-instrument console. Two synchronized 3D viewports (same instance, same road event,
+   two controllers) over a readout strip and one shared timeline. Colour tokens double as the scene palette. */
+:root {
+  --bg: #eef2f0; --panel: #ffffff; --fg: #14201c; --muted: #55655f; --line: #d3dcd8;
+  --accent: #1f6fd1; --uav1: #2a78d6; --uav2: #eb6834; --ugv: #159a6c; --block: #d93f3e; --slow: #e0a000;
+  --scene: #e4ebe8; --ground: #d6e0db; --grid: #bccac3; --road: #8d9b95; --task-open: #d93f3e; --task-done: #9aa8a2;
+  --ink-open: #6b7a74;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1311; --panel: #131d1a; --fg: #e5eee9; --muted: #92a39c; --line: #25342f;
+    --accent: #5a9cf0; --uav1: #4d94ee; --uav2: #f08052; --ugv: #2fc690; --block: #f06362; --slow: #f0b323;
+    --scene: #0a100e; --ground: #111b18; --grid: #1f2e29; --road: #566861; --task-open: #f06362; --task-done: #4c5c56;
+    --ink-open: #92a39c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1311; --panel: #131d1a; --fg: #e5eee9; --muted: #92a39c; --line: #25342f;
+  --accent: #5a9cf0; --uav1: #4d94ee; --uav2: #f08052; --ugv: #2fc690; --block: #f06362; --slow: #f0b323;
+  --scene: #0a100e; --ground: #111b18; --grid: #1f2e29; --road: #566861; --task-open: #f06362; --task-done: #4c5c56;
+  --ink-open: #92a39c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 14px; line-height: 1.45;
+  padding-inline: max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); padding-block: 18px 28px; }
+.wrap { max-width: 1280px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+header { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px 24px; }
+h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); font-size: 13px; margin: 2px 0 0; max-width: 70ch; }
+label.sel { display: flex; flex-direction: column; gap: 4px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); min-width: min(100%, 300px); }
+select, button { font: inherit; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; }
+select { text-transform: none; letter-spacing: 0; font-size: 14px; }
+button { cursor: pointer; }
+button:hover { border-color: var(--accent); }
+button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+
+#views { position: relative; width: 100%; height: clamp(320px, 58vh, 600px); background: var(--scene); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; touch-action: none; cursor: grab; }
+#views:active { cursor: grabbing; }
+#gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.vlabel { position: absolute; top: 10px; left: 12px; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 4px; background: color-mix(in srgb, var(--panel) 88%, transparent); border: 1px solid var(--line); pointer-events: none; }
+.vlabel.r { left: calc(50% + 12px); }
+.divider { position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: var(--line); pointer-events: none; }
+.tools { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 6px; }
+.tools button { padding: 5px 9px; font-size: 12px; background: color-mix(in srgb, var(--panel) 90%, transparent); }
+.hint { position: absolute; left: 12px; bottom: 10px; font-size: 11px; color: var(--muted); pointer-events: none; }
+.nogl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--muted); }
+#views.stacked .vlabel.r { left: 12px; top: calc(50% + 10px); }
+#views.stacked .divider { top: 50%; bottom: auto; left: 0; right: 0; width: auto; height: 1px; }
+#views.stacked { height: clamp(520px, 130vw, 820px); }
+
+.reads { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; min-width: 0; }
+.card h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.card h2 span { font-family: var(--mono); font-weight: 400; color: var(--muted); font-size: 12px; }
+.ebar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; position: relative; margin: 6px 0 4px; }
+.ebar i { display: block; height: 100%; background: var(--accent); width: 0; }
+.ebar i.over { background: var(--block); }
+.ebar b { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--fg); opacity: .7; }
+.erow { display: flex; justify-content: space-between; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.erow strong { color: var(--fg); font-weight: 500; }
+.agents { display: grid; grid-template-columns: auto 1fr auto; gap: 4px 10px; align-items: center; margin-top: 8px; font-size: 12px; }
+.agents .nm { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+.dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+.bat { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; }
+.bat i { display: block; height: 100%; width: 0; }
+.st { font-family: var(--mono); color: var(--muted); min-width: 9ch; text-align: right; }
+.final { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.final strong { color: var(--fg); font-weight: 500; }
+
+.timeline { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+.ctl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+#clock { font-family: var(--mono); font-size: 15px; min-width: 11ch; font-variant-numeric: tabular-nums; }
+#scrub { flex: 1 1 220px; min-width: 0; accent-color: var(--accent); }
+#chart { width: 100%; height: 130px; display: block; cursor: pointer; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 12px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+@media (max-width: 760px) { .reads { grid-template-columns: 1fr; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>UAV–UGV Mission Replay</h1>
+      <p class="sub" id="info">Same instance, same road event, two controllers. Drag to orbit, scroll to zoom, right-drag to pan.</p>
+      <p class="sub" id="caveat">Every setting is shown three ways, picked from 40 test instances: the case where replanning helped most, a typical one, and the worst one (where it helps least or hurts). The stress cases cut a road so the map is disconnected, and missions can fail. Averaged over 100 instances on the ring-road map, replanning saves about 7% of energy and 5% of mission time.</p>
+    </div>
+    <label class="sel">Scenario
+      <select id="case"></select>
+    </label>
+  </header>
+
+  <div id="views" aria-label="3D replay of the same mission under two controllers">
+    <canvas id="gl"></canvas>
+    <div class="vlabel">Open-loop · no replanning</div>
+    <div class="vlabel r">Event-triggered replanning</div>
+    <div class="divider"></div>
+    <div class="hint">UAV height is exaggerated for legibility</div>
+    <div class="tools">
+      <button id="v3d" aria-pressed="true">3D</button><button id="vtop" aria-pressed="false">Top</button>
+      <button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button>
+    </div>
+    <div class="nogl" id="nogl" hidden>WebGL is not available in this browser, so the 3D view cannot be drawn.</div>
+  </div>
+
+  <div class="reads" id="reads"></div>
+
+  <div class="timeline">
+    <div class="ctl">
+      <button id="play" aria-label="Play or pause">Pause</button>
+      <button id="restart">Restart</button>
+      <label for="speed" style="color:var(--muted);font-size:12px">Speed</label>
+      <select id="speed"><option value="6">6 min/s</option><option value="12" selected>12 min/s</option><option value="25">25 min/s</option><option value="60">60 min/s</option></select>
+      <span id="clock">t = 0.0 min</span>
+      <input id="scrub" type="range" min="0" max="100" step="0.1" value="0" aria-label="Mission time">
+    </div>
+    <canvas id="chart" aria-label="Cumulative UAV energy over mission time for both controllers"></canvas>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--uav1)"></i>UAV 1</span>
+      <span><i class="sw" style="background:var(--uav2)"></i>UAV 2</span>
+      <span><i class="sw" style="background:var(--ugv)"></i>UGV and its route</span>
+      <span><i class="sw" style="background:var(--block)"></i>blocked road</span>
+      <span><i class="sw" style="background:var(--slow)"></i>slowed road</span>
+      <span><i class="dot" style="background:var(--task-open)"></i>aerial task, not yet visited</span>
+      <span id="lg-border" hidden><i class="sw" style="background:var(--block)"></i>border · shaded strip = surveillance area</span>
+      <span><i class="dot" style="background:var(--task-done)"></i>visited</span>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const DATA = __DATA__;
+const CRUISE = 0.55, PAD = 0.16, F = DATA.fuel, HOVER = DATA.hover_kj_per_min;
+const $ = (id) => document.getElementById(id);
+const cv = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const smooth = (x) => { x = clamp(x, 0, 1); return x * x * (3 - 2 * x); };
+
+/* ---------- mission timeline (JS port of the Python Timeline in src/edr/viz.py) ---------- */
+class Run {
+  constructor(c, run) {
+    this.c = c; this.T = run.T; this.E = run.E; this.replans = run.replans; this.failed = run.failed; this.wait = run.wait; this.reason = run.reason || '';
+    this.legs = run.legs.map(l => ({ u: l[0], t0: l[1], t1: l[2], x0: l[3], y0: l[4], x1: l[5], y1: l[6], land: l[7] === 1, e: l[8], task: l[10] }))
+      .sort((a, b) => a.u - b.u || a.t0 - b.t0);
+    const prev = {};
+    for (const L of this.legs) { L.first = !(L.u in prev) || prev[L.u].land; prev[L.u] = L; }
+    this.svc = run.services.map(s => ({ u: s[0], g: s[1], td: s[2], st: s[3], en: s[4], node: s[5] }));
+    for (const L of this.legs) if (L.land) L.svc = this.svc.find(s => s.u === L.u && Math.abs(s.td - L.t1) < 2e-3);
+    this.drives = run.drives.map(d => ({ n: d[0], ta: d[1], tb: d[2], a: d[3], b: d[4] })).sort((p, q) => p.n - q.n || p.ta - q.ta);
+    const t = c.tasks;
+    this.dep = t.xy[t.depot];
+    this.depNode = t.node[t.depot];
+    this.nUav = Math.max(...this.legs.map(l => l.u)) + 1;
+  }
+  uav(u, t) {
+    let x = this.dep[0], y = this.dep[1], fuel = F;
+    for (const L of this.legs) {
+      if (L.u !== u) continue;
+      if (t < L.t0) break;
+      if (t < L.t1) {
+        const f = (t - L.t0) / Math.max(L.t1 - L.t0, 1e-9);
+        const z = L.first ? PAD + (CRUISE - PAD) * smooth(f / 0.18) : CRUISE;
+        return { x: L.x0 + f * (L.x1 - L.x0), y: L.y0 + f * (L.y1 - L.y0), z, bat: (fuel - f * L.e) / F, st: 'flying' };
+      }
+      x = L.x1; y = L.y1; fuel -= L.e;
+      if (L.land && !L.svc && this.failed) return { x, y, z: CRUISE, bat: fuel / F, st: 'stranded' };
+      if (L.land && L.svc) {
+        const s = L.svc;
+        if (t < s.st) return { x, y, z: CRUISE, bat: fuel / F, st: 'waiting' };
+        if (t < s.en) {
+          const f = (t - s.st) / Math.max(s.en - s.st, 1e-9);
+          return { x, y, z: CRUISE + (PAD - CRUISE) * smooth((t - s.st) / 1.5), bat: (fuel + f * (F - fuel)) / F, st: 'charging' };
+        }
+        fuel = F;
+      }
+    }
+    const done = this.legs.some(L => L.u === u && L.t1 <= t);
+    return { x, y, z: PAD, bat: fuel / F, st: done ? 'done' : 'idle' };
+  }
+  ugv(t) {
+    const xy = this.c.roads.xy;
+    let p = xy[this.depNode];
+    for (const d of this.drives) {
+      if (t < d.ta) break;
+      if (t < d.tb) { const f = (t - d.ta) / Math.max(d.tb - d.ta, 1e-9); return [xy[d.a][0] + f * (xy[d.b][0] - xy[d.a][0]), xy[d.a][1] + f * (xy[d.b][1] - xy[d.a][1])]; }
+      p = xy[d.b];
+    }
+    return p;
+  }
+  energy(t) {
+    let e = 0;
+    for (const L of this.legs) e += L.e * clamp((t - L.t0) / Math.max(L.t1 - L.t0, 1e-9), 0, 1);
+    for (const s of this.svc) e += HOVER * (clamp(t, s.td, s.st) - s.td);
+    return e;
+  }
+  visited(t) {
+    const v = new Set([this.c.tasks.depot]);
+    for (const L of this.legs) if (L.t1 <= t) v.add(L.task);
+    return v;
+  }
+}
+
+/* ---------- 3D world for one run ---------- */
+const hex = (s) => new THREE.Color(s);
+class World {
+  constructor(run, tmax) {
+    this.run = run; const c = run.c;
+    this.scene = new THREE.Scene();
+    this.scene.add(new THREE.AmbientLight(0xffffff, 0.75));
+    const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-6, 14, -8); this.scene.add(sun);
+    this.ground = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), new THREE.MeshLambertMaterial({ color: hex(cv('--ground')) }));
+    this.ground.rotation.x = -Math.PI / 2; this.ground.position.set(10, 0, 10); this.scene.add(this.ground);
+    this.grid = new THREE.GridHelper(20, 20, hex(cv('--grid')), hex(cv('--grid'))); this.grid.position.set(10, 0.005, 10); this.scene.add(this.grid);
+    // roads
+    this.roadMat = new THREE.MeshLambertMaterial({ color: hex(cv('--road')) });
+    this.evMat = new THREE.MeshLambertMaterial({ color: hex(c.event.kind === 'block' ? cv('--block') : cv('--slow')) });
+    const rd = c.roads, xy = rd.xy; this.edgeMesh = [];
+    rd.edges.forEach(([a, b]) => {
+      const dx = xy[b][0] - xy[a][0], dz = xy[b][1] - xy[a][1], len = Math.hypot(dx, dz);
+      const m = new THREE.Mesh(new THREE.BoxGeometry(len + 0.06, 0.04, 0.13), this.roadMat);
+      m.position.set((xy[a][0] + xy[b][0]) / 2, 0.025, (xy[a][1] + xy[b][1]) / 2); m.rotation.y = -Math.atan2(dz, dx);
+      this.scene.add(m); this.edgeMesh.push(m);
+    });
+    // tasks
+    this.taskMat = { open: new THREE.MeshLambertMaterial({ color: hex(cv('--task-open')) }), done: new THREE.MeshLambertMaterial({ color: hex(cv('--task-done')) }) };
+    this.tasks = [];
+    c.tasks.xy.forEach((p, i) => {
+      if (i < c.tasks.n_ground) {
+        const g = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.16, 0.26), new THREE.MeshLambertMaterial({ color: hex(cv('--accent')) }));
+        g.position.set(p[0], 0.1, p[1]); this.scene.add(g); this.tasks.push(g);
+        if (i === c.tasks.depot) {
+          const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.9, 8), new THREE.MeshLambertMaterial({ color: hex(cv('--fg')) }));
+          pole.position.set(p[0], 0.5, p[1]); this.scene.add(pole);
+          const flag = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.2, 0.02), new THREE.MeshLambertMaterial({ color: hex(cv('--fg')) }));
+          flag.position.set(p[0] + 0.17, 0.85, p[1]); this.scene.add(flag);
+        }
+      } else {
+        const s = new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), this.taskMat.open);
+        s.position.set(p[0], 0.34, p[1]); this.scene.add(s); this.tasks.push(s);
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.3, 4), new THREE.MeshLambertMaterial({ color: hex(cv('--grid')) }));
+        stem.position.set(p[0], 0.15, p[1]); this.scene.add(stem);
+      }
+    });
+    // UGV
+    this.ugv = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.14, 0.34), new THREE.MeshLambertMaterial({ color: hex(cv('--ugv')) })); body.position.y = 0.09;
+    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.28), new THREE.MeshLambertMaterial({ color: hex(cv('--fg')) })); pad.position.y = 0.17;
+    this.ugv.add(body, pad); this.scene.add(this.ugv);
+    // UAVs
+    this.uavs = []; this.drops = []; this.trails = [];
+    const cols = [cv('--uav1'), cv('--uav2')];
+    this.dt = 0.5; this.nTrail = Math.ceil(tmax / this.dt) + 2;
+    for (let u = 0; u < run.nUav; u++) {
+      const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color: hex(cols[u % 2]) });
+      g.add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.16), m));
+      for (const r of [Math.PI / 4, -Math.PI / 4]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.03), m); arm.rotation.y = r; g.add(arm); }
+      for (const [dx, dz] of [[.18, .18], [-.18, .18], [.18, -.18], [-.18, -.18]]) {
+        const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.01, 14), new THREE.MeshBasicMaterial({ color: hex(cols[u % 2]), transparent: true, opacity: 0.35 }));
+        rot.position.set(dx, 0.035, dz); g.add(rot);
+      }
+      this.scene.add(g); this.uavs.push(g);
+      const dl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), new THREE.LineBasicMaterial({ color: hex(cols[u % 2]), transparent: true, opacity: 0.45 }));
+      this.scene.add(dl); this.drops.push(dl);
+      this.trails.push(this.makeTrail(cols[u % 2], (t) => { const s = run.uav(u, t); return [s.x, s.z, s.y]; }));
+    }
+    this.trails.push(this.makeTrail(cv('--ugv'), (t) => { const p = run.ugv(t); return [p[0], 0.06, p[1]]; }));
+    // border-surveillance overlay: patrol strip + border line
+    if (c.border) {
+      const [[sx0, sy0], [sx1, sy1], half] = c.strip, dx = sx1 - sx0, dy = sy1 - sy0, len = Math.hypot(dx, dy);
+      const strip = new THREE.Mesh(new THREE.PlaneGeometry(len, 2 * half), new THREE.MeshBasicMaterial({ color: hex(cv('--accent')), transparent: true, opacity: 0.1, depthWrite: false }));
+      strip.rotation.x = -Math.PI / 2; strip.rotation.z = Math.atan2(dy, dx);
+      strip.position.set((sx0 + sx1) / 2, 0.012, (sy0 + sy1) / 2); this.scene.add(strip);
+      const [[bx0, by0], [bx1, by1]] = c.border, bl = Math.hypot(bx1 - bx0, by1 - by0), ang = Math.atan2(by1 - by0, bx1 - bx0);
+      const bm = new THREE.MeshBasicMaterial({ color: hex(cv('--block')) });
+      for (let d = 0; d < bl - 0.3; d += 0.55) {
+        const seg = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.07), bm);
+        seg.position.set(bx0 + Math.cos(ang) * (d + 0.17), 0.04, by0 + Math.sin(ang) * (d + 0.17)); seg.rotation.y = -ang; this.scene.add(seg);
+      }
+      const bt = this.makeLabel('BORDER', cv('--block')); bt.scale.set(1.6, 0.4, 1); bt.position.set(bx0 + 0.9, 0.7, by0 + 0.25); this.scene.add(bt);
+    }
+    // event label
+    const kind = c.event.kind === 'block' ? 'BLOCKED' : 'SLOW ×' + c.event.kappa;
+    const cx = c.event.edges.reduce((s, e) => s + (xy[rd.edges[e][0]][0] + xy[rd.edges[e][1]][0]) / 2, 0) / c.event.edges.length;
+    const cz = c.event.edges.reduce((s, e) => s + (xy[rd.edges[e][0]][1] + xy[rd.edges[e][1]][1]) / 2, 0) / c.event.edges.length;
+    this.label = this.makeLabel(kind, c.event.kind === 'block' ? cv('--block') : cv('--slow'));
+    this.label.position.set(cx, 1.5, cz); this.label.visible = false; this.scene.add(this.label);
+    this.scene.background = hex(cv('--scene'));
+  }
+  makeTrail(color, fn) {
+    const pts = new Float32Array(this.nTrail * 3);
+    for (let i = 0; i < this.nTrail; i++) { const q = fn(Math.min(i * this.dt, 1e9)); pts[i * 3] = q[0]; pts[i * 3 + 1] = q[1]; pts[i * 3 + 2] = q[2]; }
+    const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.BufferAttribute(pts, 3)); geo.setDrawRange(0, 0);
+    const line = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: hex(color), transparent: true, opacity: 0.8 }));
+    this.scene.add(line); return line;
+  }
+  makeLabel(text, color) {
+    const cvs = document.createElement('canvas'); cvs.width = 320; cvs.height = 80;
+    const g = cvs.getContext('2d'); g.fillStyle = color; g.beginPath(); g.roundRect ? g.roundRect(4, 4, 312, 72, 12) : g.rect(4, 4, 312, 72); g.fill();
+    g.fillStyle = '#fff'; g.font = '600 38px "IBM Plex Sans", sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, 160, 42);
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cvs), depthTest: false }));
+    s.scale.set(2.4, 0.6, 1); return s;
+  }
+  theme() {
+    this.ground.material.color.set(cv('--ground')); this.roadMat.color.set(cv('--road'));
+    this.evMat.color.set(this.run.c.event.kind === 'block' ? cv('--block') : cv('--slow'));
+    this.taskMat.open.color.set(cv('--task-open')); this.taskMat.done.color.set(cv('--task-done'));
+    this.scene.background = hex(cv('--scene'));
+    this.grid.material.color.set(cv('--grid'));
+  }
+  update(t) {
+    const r = this.run, ev = r.c.event;
+    r.c.event.edges.forEach((e) => { this.edgeMesh[e].material = t >= ev.t ? this.evMat : this.roadMat; });
+    this.label.visible = t >= ev.t;
+    const vis = r.visited(t), ng = r.c.tasks.n_ground;
+    this.tasks.forEach((m, i) => { if (i >= ng) { m.material = vis.has(i) ? this.taskMat.done : this.taskMat.open; m.scale.setScalar(vis.has(i) ? 0.75 : 1); } });
+    const g = r.ugv(t); this.ugv.position.set(g[0], 0, g[1]);
+    const nu = r.nUav, states = [];
+    for (let u = 0; u < nu; u++) {
+      const s = r.uav(u, t); states.push(s);
+      this.uavs[u].position.set(s.x, s.z, s.y);
+      this.uavs[u].rotation.y = s.st === 'flying' ? t * 14 : 0;
+      const pos = this.drops[u].geometry.attributes.position;
+      pos.setXYZ(0, s.x, 0.02, s.y); pos.setXYZ(1, s.x, s.z, s.y); pos.needsUpdate = true;
+    }
+    const k = Math.min(this.nTrail, Math.floor(t / this.dt) + 1);
+    this.trails.forEach((l) => l.geometry.setDrawRange(0, k));
+    return states;
+  }
+}
+
+/* ---------- app state ---------- */
+const views = $('views'), glc = $('gl');
+let renderer = null;
+try { renderer = new THREE.WebGLRenderer({ canvas: glc, antialias: true }); } catch (e) { $('nogl').hidden = false; }
+const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+const cam = { th: 0.55, ph: 0.95, r: 14, tx: 9, tz: 9 };
+function placeCamera() {
+  const sp = Math.sin(cam.ph);
+  camera.position.set(cam.tx + cam.r * sp * Math.sin(cam.th), cam.r * Math.cos(cam.ph), cam.tz - cam.r * sp * Math.cos(cam.th));
+  camera.lookAt(cam.tx, 0, cam.tz);
+}
+let cur = null, worlds = [], runs = [], tmax = 1, t = 0, playing = !matchMedia('(prefers-reduced-motion: reduce)').matches, last = performance.now();
+let reads = [];
+
+function frameCase(c) {
+  const xs = c.roads.xy.map(p => p[0]), ys = c.roads.xy.map(p => p[1]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  Object.assign(cam, { th: 0.55, ph: 0.95, tx: (x0 + x1) / 2, tz: (y0 + y1) / 2 + 0.5, r: clamp(Math.max(x1 - x0, y1 - y0) * 1.35 + 3, 12, 24) });
+}
+function loadCase(i) {
+  const c = DATA.cases[i]; cur = c; frameCase(c);
+  runs = [new Run(c, c.open), new Run(c, c.event_run)];
+  tmax = Math.max(runs[0].T, runs[1].T) + 1;
+  worlds = renderer ? runs.map((r) => new World(r, tmax)) : [];
+  $('scrub').max = tmax.toFixed(1); t = 0; $('lg-border').hidden = !c.border;
+  $('info').textContent = `[${c.tag}] ${c.note}. Instance seed ${c.seed}. The road event hits at t = ${c.event.t.toFixed(0)} min. Budget B = 0.9 B0 = ${c.budget.toFixed(0)} kJ; the same mission on static roads takes ${c.static.T.toFixed(0)} min and ${c.static.E.toFixed(0)} kJ.`;
+  buildReads();
+  drawChart();
+  $('play').textContent = playing ? 'Pause' : 'Play';
+}
+
+function buildReads() {
+  const names = ['Open-loop · no replanning', 'Event-triggered replanning'];
+  $('reads').innerHTML = '';
+  reads = runs.map((r, k) => {
+    const el = document.createElement('div'); el.className = 'card';
+    const agents = Array.from({ length: r.nUav }, (_, u) => `<span class="nm"><i class="dot" style="background:var(--uav${(u % 2) + 1})"></i>UAV ${u + 1}</span><span class="bat"><i style="background:var(--uav${(u % 2) + 1})"></i></span><span class="st"></span>`).join('');
+    el.innerHTML = `<h2>${names[k]}<span class="clk"></span></h2>
+      <div class="erow"><span>UAV energy so far</span><strong class="en">0 kJ</strong></div>
+      <div class="ebar"><i></i><b style="left:${Math.min(100, cur.budget / (Math.max(runs[0].E, runs[1].E, cur.budget) * 1.05) * 100)}%" title="budget"></b></div>
+      <div class="erow"><span>0</span><span>budget ${cur.budget.toFixed(0)} kJ</span></div>
+      <div class="agents">${agents}</div>
+      <div class="final"><span>${r.failed ? 'failed at' : 'mission'} <strong>${r.T.toFixed(0)} min</strong></span><span>energy <strong>${r.E.toFixed(0)} kJ</strong></span><span>waiting <strong>${r.wait.toFixed(0)} min</strong></span><span>replans <strong>${r.replans}</strong></span>${r.failed ? '<span style="color:var(--block)">MISSION FAILED: ' + r.reason + '</span>' : (r.E > cur.budget ? '<span style="color:var(--block)">over budget</span>' : '<span style="color:var(--ugv)">within budget</span>')}</div>`;
+    $('reads').appendChild(el);
+    return { el, en: el.querySelector('.en'), bar: el.querySelector('.ebar i'), bats: [...el.querySelectorAll('.bat i')], sts: [...el.querySelectorAll('.st')], clk: el.querySelector('.clk') };
+  });
+}
+
+function layout() {
+  if (!renderer) return;
+  const w = views.clientWidth, h = views.clientHeight;
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2)); renderer.setSize(w, h, false);
+  views.classList.toggle('stacked', w < 760);
+  drawChart();
+}
+function render() {
+  if (!renderer || !worlds.length) return;
+  const w = views.clientWidth, h = views.clientHeight, stacked = w < 760;
+  const rects = stacked ? [[0, h / 2, w, h / 2], [0, 0, w, h / 2]] : [[0, 0, w / 2, h], [w / 2, 0, w / 2, h]];
+  renderer.setScissorTest(true); placeCamera();
+  worlds.forEach((wd, i) => {
+    const [x, y, rw, rh] = rects[i];
+    renderer.setViewport(x, y, rw, rh); renderer.setScissor(x, y, rw, rh);
+    camera.aspect = rw / rh; camera.updateProjectionMatrix(); renderer.render(wd.scene, camera);
+  });
+}
+const stLabel = { flying: 'flying', waiting: 'hovering', charging: 'charging', idle: 'at depot', done: 'finished', stranded: 'stranded' };
+function updateAll() {
+  worlds.forEach((wd, k) => {
+    const st = wd.update(t), rd = reads[k], r = runs[k], ts = Math.min(t, r.T), e = r.energy(ts);
+    rd.en.textContent = e.toFixed(0) + ' kJ';
+    const scale = Math.max(runs[0].E, runs[1].E, cur.budget) * 1.05;
+    rd.bar.style.width = clamp(e / scale * 100, 0, 100) + '%'; rd.bar.classList.toggle('over', e > cur.budget);
+    rd.clk.textContent = t >= r.T ? 'finished at ' + r.T.toFixed(0) + ' min' : 't = ' + t.toFixed(0) + ' min';
+    st.forEach((s, u) => { rd.bats[u].style.width = clamp(s.bat * 100, 0, 100) + '%'; rd.sts[u].textContent = Math.round(clamp(s.bat, 0, 1) * 100) + '% ' + stLabel[s.st]; });
+  });
+  $('clock').textContent = 't = ' + t.toFixed(1) + ' min';
+  $('scrub').value = t; drawCursor();
+}
+
+/* ---------- energy chart ---------- */
+const chart = $('chart'); let chartBase = null;
+function drawChart() {
+  if (!runs.length) return;
+  const dpr = Math.min(devicePixelRatio || 1, 2), w = chart.clientWidth, h = chart.clientHeight;
+  if (w < 10 || h < 10) return;
+  chart.width = w * dpr; chart.height = h * dpr;
+  const g = chart.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const padL = 46, padR = 10, padT = 8, padB = 20, W = w - padL - padR, H = h - padT - padB;
+  const emax = Math.max(runs[0].E, runs[1].E, cur.budget) * 1.08;
+  const X = (tt) => padL + tt / tmax * W, Y = (e) => padT + H - e / emax * H;
+  g.clearRect(0, 0, w, h); g.font = '11px ' + cv('--mono'); g.fillStyle = cv('--muted'); g.strokeStyle = cv('--line'); g.lineWidth = 1;
+  const step = emax > 6000 ? 2000 : 1000;
+  for (let e = 0; e <= emax; e += step) { g.beginPath(); g.moveTo(padL, Y(e)); g.lineTo(w - padR, Y(e)); g.stroke(); g.textAlign = 'right'; g.fillText(e + '', padL - 6, Y(e) + 4); }
+  g.textAlign = 'center'; for (let tt = 0; tt <= tmax; tt += 50) g.fillText(tt + '', X(tt), h - 5);
+  g.setLineDash([5, 4]); g.strokeStyle = cv('--block'); g.beginPath(); g.moveTo(padL, Y(cur.budget)); g.lineTo(w - padR, Y(cur.budget)); g.stroke(); g.setLineDash([]);
+  g.fillStyle = cv('--block'); g.textAlign = 'left'; g.fillText('budget', padL + 4, Y(cur.budget) - 4);
+  g.strokeStyle = cv('--slow'); g.beginPath(); g.moveTo(X(cur.event.t), padT); g.lineTo(X(cur.event.t), padT + H); g.stroke();
+  g.fillStyle = cv('--muted'); g.fillText('road event', X(cur.event.t) + 4, padT + 11);
+  [[runs[0], cv('--ink-open')], [runs[1], cv('--accent')]].forEach(([r, col]) => {
+    g.strokeStyle = col; g.lineWidth = 2; g.beginPath();
+    for (let tt = 0; tt <= r.T + 0.01; tt += 1) { const x = X(tt), y = Y(r.energy(tt)); tt === 0 ? g.moveTo(x, y) : g.lineTo(x, y); }
+    g.stroke();
+    g.fillStyle = cv('--muted'); g.textAlign = 'right';
+    g.fillText(r === runs[0] ? 'open-loop' : 'event-triggered', X(r.T) - 4, Y(r.E) - 7);
+  });
+  g.fillStyle = cv('--muted'); g.textAlign = 'right'; g.fillText('cumulative UAV energy (kJ) vs mission time (min)', w - padR, padT + 11);
+  chartBase = { img: g.getImageData(0, 0, w * dpr, h * dpr), X, padT, H, dpr };
+}
+function drawCursor() {
+  if (!chartBase) return;
+  const g = chart.getContext('2d'); g.setTransform(1, 0, 0, 1, 0, 0); g.putImageData(chartBase.img, 0, 0);
+  g.setTransform(chartBase.dpr, 0, 0, chartBase.dpr, 0, 0);
+  const x = chartBase.X(Math.min(t, tmax)); g.strokeStyle = cv('--fg'); g.lineWidth = 1.5; g.beginPath(); g.moveTo(x, chartBase.padT); g.lineTo(x, chartBase.padT + chartBase.H); g.stroke();
+}
+chart.addEventListener('pointerdown', (e) => { const b = chart.getBoundingClientRect(); t = clamp((e.clientX - b.left - 46) / (b.width - 56) * tmax, 0, tmax); updateAll(); });
+
+/* ---------- controls ---------- */
+let drag = null;
+views.addEventListener('pointerdown', (e) => { if (e.target.closest('.tools')) return; drag = { x: e.clientX, y: e.clientY, pan: e.button === 2 || e.shiftKey }; views.setPointerCapture(e.pointerId); });
+views.addEventListener('pointermove', (e) => {
+  if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; drag.x = e.clientX; drag.y = e.clientY;
+  if (drag.pan) { const s = cam.r * 0.0016; cam.tx -= (Math.cos(cam.th) * dx - Math.sin(cam.th) * dy) * s; cam.tz += (Math.sin(cam.th) * dx + Math.cos(cam.th) * dy) * s; }
+  else { cam.th -= dx * 0.006; cam.ph = clamp(cam.ph - dy * 0.005, 0.02, 1.45); setPressed(false); }
+});
+views.addEventListener('pointerup', () => { drag = null; });
+views.addEventListener('contextmenu', (e) => e.preventDefault());
+views.addEventListener('wheel', (e) => { e.preventDefault(); cam.r = clamp(cam.r * (1 + Math.sign(e.deltaY) * 0.08), 5, 34); }, { passive: false });
+function setPressed(top) { $('vtop').setAttribute('aria-pressed', top); $('v3d').setAttribute('aria-pressed', !top); }
+$('v3d').onclick = () => { frameCase(cur); setPressed(false); };
+$('vtop').onclick = () => { frameCase(cur); Object.assign(cam, { th: 0, ph: 0.02, r: cam.r * 1.1 }); setPressed(true); };
+$('zin').onclick = () => { cam.r = clamp(cam.r * 0.85, 5, 34); };
+$('zout').onclick = () => { cam.r = clamp(cam.r * 1.18, 5, 34); };
+$('play').onclick = () => { if (t >= tmax) t = 0; playing = !playing; $('play').textContent = playing ? 'Pause' : 'Play'; };
+$('restart').onclick = () => { t = 0; playing = true; $('play').textContent = 'Pause'; };
+$('scrub').oninput = (e) => { t = parseFloat(e.target.value); updateAll(); };
+window.addEventListener('keydown', (e) => { if (e.code === 'Space' && !/SELECT|INPUT|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); $('play').click(); } });
+const groups = {};
+DATA.cases.forEach((c, i) => {
+  const g = groups[c.map] || (groups[c.map] = Object.assign(document.createElement('optgroup'), { label: { loop: 'Ring-road map', border: 'Border surveillance', paper: "Base paper's map" }[c.map] }));
+  const o = document.createElement('option'); o.value = i; o.textContent = c.title.split(' · ').slice(1).join(' · '); g.appendChild(o);
+});
+Object.values(groups).forEach((g) => $('case').appendChild(g));
+$('case').onchange = (e) => { loadCase(+e.target.value); };
+$('speed').onchange = () => {};
+new ResizeObserver(layout).observe(views);
+const retheme = () => { worlds.forEach((w) => w.theme()); drawChart(); drawCursor(); };
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+
+function frame(now) {
+  const dt = Math.min(0.1, (now - last) / 1000); last = now;
+  if (playing) { t += dt * parseFloat($('speed').value); if (t >= tmax) { t = tmax; playing = false; $('play').textContent = 'Play'; } }
+  updateAll(); render(); requestAnimationFrame(frame);
+}
+loadCase(0); layout();
+requestAnimationFrame(frame);
+</script>

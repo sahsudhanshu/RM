@@ -1,0 +1,19 @@
+% ------------------------- additions for this deck -------------------------
+\usepackage{makecell}
+\usetikzlibrary{shapes.geometric,fit,backgrounds}
+\setbeamertemplate{bibliography item}[text]
+\tikzset{
+  fb/.style={draw=Midnight!55, rounded corners=2pt, fill=white, align=center, inner sep=3pt,
+             font=\footnotesize, minimum height=8mm, text width=2.2cm},
+  fteal/.style={fb, fill=Teal!14, draw=Teal!70!black},
+  famber/.style={fb, fill=Amber!24, draw=Amber!80!black},
+  fred/.style={fb, fill=red!9, draw=red!60!black},
+  fgray/.style={fb, fill=gray!13, draw=gray!60},
+  fnavy/.style={fb, fill=Midnight, draw=Midnight, text=white},
+  dia/.style={diamond, draw=Midnight!55, fill=Amber!18, aspect=2.4, align=center, inner sep=0pt, font=\footnotesize},
+  ar/.style={-{Stealth[length=1.8mm]}, thick, draw=Midnight!70},
+  arg/.style={-{Stealth[length=1.8mm]}, thick, draw=Teal!80!black},
+  arr/.style={-{Stealth[length=1.8mm]}, thick, draw=red!60!black},
+  lab/.style={font=\scriptsize, text=Muted, align=center},
+}
+\newcommand{\chip}[2]{\tikz[baseline=(c.base)]\node[draw=#1!70!black, fill=#1!12, rounded corners=3pt, inner sep=2.5pt, font=\footnotesize] (c) {#2};}

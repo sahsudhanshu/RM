@@ -1,0 +1,15 @@
+{
+  "id": "vichanshur/edr-paper-4u2g-long",
+  "title": "EDR PAPER 4U2G LONG",
+  "code_file": "entry.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "vichanshur/edr-code"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

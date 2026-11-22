@@ -1,0 +1,42 @@
+seed: 11
+units:
+  distance: km
+  time: min
+map:
+  width_km: 20.0
+  height_km: 20.0
+  aerial_sampling_radius_km: 7.0
+matrix:
+  task_sizes:
+    - [15, 5]
+    - [45, 15]
+    - [75, 25]
+  fleets:
+    - [2, 1]
+    - [2, 2]
+    - [4, 2]
+simulation:
+  uav_speed_m_per_s: 10.0
+  ugv_speed_km_per_min: 0.27
+  uav_fuel_capacity_j: 287700.0
+  recharge_time_min: 15.0
+  failure_penalty_min: 800.0
+  maximum_sortie_rounds: 100
+model:
+  route_layers: 3
+  embedding_dim: 128
+  attention_heads: 8
+  assignment_attention_dim: 64
+training:
+  teacher_steps: 500
+  baseline_policy_gradient_steps: 300
+  proposed_joint_steps: 1000
+  missions_per_update: 4
+  learning_rate: 0.00003
+  imitation_weight: 0.2
+  checkpoint_interval: 100
+evaluation:
+  validation_scenarios_per_cell: 256
+  paired_test_scenarios_per_cell: 256
+  latency_scenarios_per_cell: 64
+  full_policy_training_seeds_per_cell: 1

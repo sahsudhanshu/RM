@@ -1,0 +1,24 @@
+# environments / build caches
+.venv/
+.texlocal/
+__pycache__/
+.pytest_cache/
+*.pyc
+presentation_final/*.aux
+presentation_final/*.log
+presentation_final/*.nav
+presentation_final/*.out
+presentation_final/*.snm
+presentation_final/*.toc
+presentation_final/*.vrb
+# scratch download folders
+implementation/out/
+# model checkpoints and bulky run artefacts (reproducible on Kaggle)
+*.pt
+*.pth
+*.npz
+*.log
+*.mp4
+context/base_papers/authors_code_multi-uav-ugv-drl/
+# per-instance raw result tables from Kaggle runs (summaries/reports/figures are kept)
+implementation/results_kaggle/**/stage*.csv

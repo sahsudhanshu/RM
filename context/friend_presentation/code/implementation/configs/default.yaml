@@ -1,0 +1,36 @@
+seed: 7
+units:
+  distance: km
+  time: min
+map:
+  width_km: 20.0
+  height_km: 20.0
+  aerial_sampling_radius_km: 7.0
+scenario:
+  aerial_task_points: 15
+  ground_task_points: 5
+  number_of_uavs: 2
+  number_of_ugvs: 2
+simulation:
+  uav_speed_m_per_s: 10.0
+  ugv_speed_km_per_min: 0.27  # 4.5 m/s
+  uav_fuel_capacity_j: 287700.0
+  recharge_time_min: 15.0     # 900 seconds in the authors' environment
+  failure_penalty: 800.0
+model:
+  uav_feature_dim: 5
+  ugv_feature_dim: 4
+  embedding_dim: 128
+  attention_dim: 64
+  max_slots_per_ugv: 8
+  sinkhorn_iterations: 20
+  sinkhorn_temperature: 0.2
+  initial_queue_weight: 1.0
+training:
+  batch_size: 256
+  batches_per_epoch: 200
+  instances_per_epoch: 51200
+  epochs: 100
+  total_instances_per_model: 5120000
+  learning_rate: 0.0001
+  learning_rate_decay: 0.995

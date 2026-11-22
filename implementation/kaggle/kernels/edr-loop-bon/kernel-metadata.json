@@ -1,0 +1,16 @@
+{
+  "id": "vichanshur/edr-loop-bon",
+  "title": "EDR LOOP BON",
+  "code_file": "entry.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "vichanshur/edr-code",
+    "vichanshur/edr-p0-loop"
+  ],
+  "competition_sources": [],
+  "kernel_sources": []
+}

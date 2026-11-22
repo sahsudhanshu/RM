@@ -1,0 +1,107 @@
+% =====================================================================
+%  Energy-Constrained UAV--UGV Replanning under Dynamic Road Conditions
+%  Beamer source -- compile with pdflatex (run twice) or on Overleaf
+% =====================================================================
+\documentclass[aspectratio=169,10pt]{beamer}
+\usetheme{default}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{pifont}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\hypersetup{colorlinks=true,urlcolor=blue}
+
+% ----------------------- minimal visual identity -----------------------
+\definecolor{Midnight}{HTML}{17324D}
+\definecolor{Teal}{HTML}{159A96}
+\definecolor{Amber}{HTML}{E8A93A}
+\definecolor{Paper}{HTML}{F7F8FA}
+\definecolor{Ink}{HTML}{202A35}
+\definecolor{Muted}{HTML}{667085}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{itemize item}{\color{Teal}\raise0.15ex\hbox{\scriptsize$\blacktriangleright$}}
+\setbeamertemplate{itemize subitem}{\color{Teal}\raise0.1ex\hbox{\tiny$\blacktriangleright$}}
+
+\setbeamercolor{background canvas}{bg=Paper}
+\setbeamercolor{normal text}{fg=Ink,bg=Paper}
+\setbeamercolor{structure}{fg=Teal}
+\setbeamercolor{frametitle}{fg=Midnight,bg=Paper}
+\setbeamercolor{title}{fg=Midnight}
+\setbeamercolor{subtitle}{fg=Muted}
+\setbeamercolor{author}{fg=Ink}
+\setbeamercolor{institute}{fg=Muted}
+\setbeamercolor{block title}{fg=white,bg=Midnight}
+\setbeamercolor{block body}{fg=Ink,bg=white}
+\setbeamercolor{block title alerted}{fg=white,bg=Amber!85!black}
+\setbeamercolor{block body alerted}{fg=Ink,bg=Amber!10}
+\setbeamercolor{footline}{fg=Muted,bg=Paper}
+
+\setbeamerfont{title}{size=\Large,series=\bfseries}
+\setbeamerfont{subtitle}{size=\large}
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamerfont{author}{size=\normalsize}
+\setbeamerfont{institute}{size=\small}
+\setbeamertemplate{blocks}[rounded][shadow=false]
+
+% Subtle asymmetric background: a navy edge and two soft corner shapes.
+\setbeamertemplate{background}{%
+\begin{tikzpicture}[remember picture,overlay]
+  \path[use as bounding box] (0,0) rectangle (0,0);
+  \fill[Midnight] (current page.north west)
+    rectangle ([xshift=1.4mm]current page.south west);
+  \fill[Teal!8] ([xshift=-4mm,yshift=8mm]current page.north east)
+    circle[radius=17mm];
+  \fill[Amber!9] ([xshift=8mm,yshift=-5mm]current page.south east)
+    circle[radius=14mm];
+\end{tikzpicture}%
+}
+
+% Left-aligned title page with a short accent rule.
+\setbeamertemplate{title page}{%
+  \vspace*{0.9cm}
+  \hspace*{0.5cm}%
+  \begin{minipage}{0.88\textwidth}
+    {\color{Teal}\rule{1.8cm}{2.4pt}}\par\vspace{5mm}
+    {\usebeamerfont{title}\usebeamercolor[fg]{title}\inserttitle\par}
+    \vspace{3mm}
+    {\usebeamerfont{subtitle}\usebeamercolor[fg]{subtitle}\insertsubtitle\par}
+    \vspace{8mm}
+    {\color{Midnight!25}\rule{0.68\linewidth}{0.5pt}}\par\vspace{5mm}
+    {\usebeamerfont{author}\usebeamercolor[fg]{author}\insertauthor\par}
+    \vspace{2mm}
+    {\usebeamerfont{institute}\usebeamercolor[fg]{institute}\insertinstitute\par}
+  \end{minipage}
+}
+
+% Frame title with a short teal marker and a light horizontal rule.
+\setbeamertemplate{frametitle}{%
+  \nointerlineskip
+  \vspace*{3.0mm}
+  \hspace*{4mm}%
+  \begin{beamercolorbox}[wd=0.89\paperwidth,sep=0pt]{frametitle}
+    \strut\usebeamerfont{frametitle}\insertframetitle\strut
+  \end{beamercolorbox}
+  \hspace*{4mm}{\color{Teal}\rule{1.4cm}{1.5pt}%
+  \color{Midnight!14}\rule{0.70\paperwidth}{0.5pt}}
+}
+
+% Compact footer: presentation label on the left, page number on the right.
+\setbeamertemplate{footline}{%
+  \leavevmode
+  \begin{beamercolorbox}[wd=\paperwidth,ht=2.5ex,dp=1.1ex,
+    leftskip=5mm,rightskip=5mm]{footline}
+    \hfill\scriptsize\insertframenumber\,/\,\inserttotalframenumber
+  \end{beamercolorbox}
+}
+
+\newcommand{\cmark}{\textcolor{green!50!black}{\ding{51}}}
+\newcommand{\xmark}{\textcolor{red!70!black}{\ding{55}}}
+\newcommand{\pmark}{\textcolor{orange!85!black}{$\sim$}}
+\newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
+
