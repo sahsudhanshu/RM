@@ -206,4 +206,6 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 * [x] Closed since: 4 team sizes x 3 seeds, Stage C (45 and 75 tasks), GLS/Tabu/SA baselines, sampled decoding (1024), lambda convergence (cap 50), search distillation (negative).
 * [x] Mid-sem idea: not achieved at route level (H1); achieved via just-in-time departure (-53..-74 % energy, +0 min; see README).
 * [x] Loop-detection fallback (removes the bad seed's failures; seed stays ~2x slower), JIT across team sizes (-9..-70 % energy at +0 min), 35 tests.
-* [ ] Still open: Gazebo coupling (skipped by user), 10240-sample decoding (Kaggle kernel `edr-sampling10240` running), 4U-2G base gap (9-14 %), candidates A/B negative.
+* [ ] Still open: Gazebo coupling (skipped by user), 4U-2G base gap (9-14 %), candidates A/B negative.
+
+* [x] 10240-sample decoding done: 197.5/157.2/135.3/135.2 min (paper 218.6/199.7/154.4/159.9).

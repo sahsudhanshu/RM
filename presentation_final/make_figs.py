@@ -199,16 +199,16 @@ fig.tight_layout(); fig.subplots_adjust(bottom=0.27); fig.savefig(f"{OUT}/fig_st
 
 # ---- 10. baselines and sampled decoding on the paper's map
 bl = {(r["team"], r["method"]): float(r["T"]) for r in read(os.path.join(IMPL, "results", "bilevel_eval_paper.csv"))}
-sm = {r["team"]: float(r["best_T"]) for r in read(os.path.join(IMPL, "results", "sampling_eval_1024.csv"))}
+sm = {r["team"]: float(r["best_T"]) for r in read(os.path.join(IMPL, "results", "sampling_eval_10240.csv"))}
 teams4 = ["1U-1G", "2U-1G", "2U-2G", "4U-2G"]
-paper_gls = [281.7, 232.8, 188.3, 219.7]; paper_g = [238.2, 229.7, 180.5, 188.9]; paper_1024 = [220.4, 203.1, 157.1, 165.6]
+paper_gls = [281.7, 232.8, 188.3, 219.7]; paper_g = [238.2, 229.7, 180.5, 188.9]; paper_1024 = [218.6, 199.7, 154.4, 159.9]
 ours_gls = [bl[(t, "GLS")] for t in teams4]; ours_s = [sm[t] for t in teams4]
 fig, axs = plt.subplots(1, 2, figsize=(10.6, 3.5)); x = np.arange(4); w = .36
 axs[0].bar(x - w / 2, paper_gls, w, color=GRAY, label="Paper, GLS [1]"); axs[0].bar(x + w / 2, ours_gls, w, color=TEAL, label="Ours, GLS (OR-Tools)")
 axs[0].set_xticks(x, teams4); axs[0].set_ylabel("mean mission time (min)"); axs[0].set_ylim(0, 340); axs[0].legend(frameon=False, fontsize=9, loc="upper center", ncol=2)
 axs[0].set_title("Bilevel heuristic baseline", loc="left")
 w = .2
-for k, (vals, lab, col) in enumerate([(paper_g, "Paper greedy", GRAY), (ours, "Ours greedy", TEAL), (paper_1024, "Paper, 1024 samples", LIGHT), (ours_s, "Ours, best of 1024", NAVY)]):
+for k, (vals, lab, col) in enumerate([(paper_g, "Paper greedy", GRAY), (ours, "Ours greedy", TEAL), (paper_1024, "Paper, 10240 samples", LIGHT), (ours_s, "Ours, best of 10240", NAVY)]):
     axs[1].bar(x + (k - 1.5) * w, vals, w, color=col, label=lab, edgecolor=GRAY if col == LIGHT else col)
 axs[1].set_xticks(x, teams4); axs[1].set_ylim(0, 340); axs[1].legend(frameon=False, fontsize=8, ncol=2, loc="upper center"); axs[1].set_title("Learned policy: greedy vs sampled", loc="left")
 fig.tight_layout(); fig.savefig(f"{OUT}/fig_baselines.png", dpi=200); plt.close(fig)

@@ -103,11 +103,11 @@ Each map was trained from scratch for 3 seeds (800 imitation + 1200 REINFORCE st
   Event-triggered = periodic (|dT| <= 0.8 min) with 1-4 fewer replans per mission (1U-1G: 4.7 vs 0.6). P3/P4 are again indistinguishable from the control (all CIs contain 0). P1 (sampling + filter) beats the control by 18 / 26 / 49 min.
 * **Stage C, larger instances (zero-shot, loop map, 2U-1G, 50 instances, 3 seeds; `results_stageC/`):** at 45 and 75 tasks the same ordering holds (open loop > event-triggered > sampling + filter), but one of the three seeds is a **bad base policy, not a size effect**: it already loops forever (hits the round cap) in 5 of 30 instances at the training size (15 tasks: mean 892 min vs 192 for the other seeds), and in 5 of 30 at 45 tasks (mean 1343 vs ~352). The other two seeds give ~360 min at 45 tasks and ~470 at 75. Median-seed numbers: 45 tasks greedy ~360 -> filter ~315; 75 tasks ~480 -> ~440.
 * **Base policy gap (paper map, 4U-2G):** 3000 REINFORCE steps x 3 seeds give 214.9 / 211.1 / 206.5 min (was 219.0): **still 9-14 % above the paper's greedy 188.9**; more training at this scale does not close the gap.
-* **Sampled decoding (paper map, 100 instances, best of 1024; `scripts/sampling_eval.py`):** 199.5 / 160.2 / 138.5 / 140.7 min for 1U-1G / 2U-1G / 2U-2G / 4U-2G vs paper DRL(1024) 220.4 / 203.1 / 157.1 / 165.6. Our map and instances are reconstructions, so this is not a claim to beat the paper. The 10240-sample setting was not run.
+* **Sampled decoding (paper map, 100 instances, best of 1024; `scripts/sampling_eval.py`):** 199.5 / 160.2 / 138.5 / 140.7 min for 1U-1G / 2U-1G / 2U-2G / 4U-2G vs paper DRL(1024) 220.4 / 203.1 / 157.1 / 165.6. Our map and instances are reconstructions, so this is not a claim to beat the paper. **Best of 10,240** (Kaggle kernel `edr-sampling10240`, 50 instances, `results/sampling_eval_10240.csv`): 197.5 / 157.2 / 135.3 / 135.2 min vs paper DRL(10240) 218.6 / 199.7 / 154.4 / 159.9, i.e. 10 to 15 % lower than the paper's number for the same sample budget; more samples than 1024 gain only 1 to 4 % (4U-2G 140.7 -> 135.2).
 * **GLS / Tabu / SA baselines (`src/edr/bilevel.py`, `scripts/bilevel_eval.py`; paper map, 100 instances, 3-4 failures excluded):** our OR-Tools bilevel pipeline (min set cover -> stop-order TSP -> capacity-constrained UAV sorties, executed in our simulator) gives GLS 279 / 208 / 198 / 175 min vs the paper's 281.7 / 232.8 / 188.3 / 219.7: close for 1U-1G, +-10-20 % otherwise, so the same ballpark, not an exact reproduction. GLS, Tabu and SA differ by < 1 % here.
 * **Lambda (M2) with the cap raised to 50 and 1500 steps (`p3h_*`, greedy-validation-driven):** lambda now **settles** instead of hitting the cap: ~5.1 (std 0.15) at beta = 1.0 (residual violation +0.03) and ~13.4 (std 0.5) at beta = 0.9 (residual violation +0.16: the budget is still not met). M2's "lambda converges" criterion is met; the 0.9 budget is infeasible for the greedy policy.
 * **Candidates A/B fix attempt - search distillation (`expert_iteration`, variants bon_t / bon_nb / bon_p4x):** the best of 32 sampled routes is ~25 % faster than the average sample (elite T 130-155 vs 170-200 min), but imitating it did **not** transfer: greedy validation time stays between 182 and 240 min and ends no better than the control (all variants T = 218.6-220.4 vs control 220.2; budget-aware equals budget-blind). Negative result; checkpoint selection was not tried.
-* **Still not done:** Gazebo coupling (skipped by choice); the 10240-sample decoding; a loop-detection fallback for the bad seed.
+* **Still not done:** Gazebo coupling (skipped by choice). Done since: 10240-sample decoding, loop-detection fallback for the bad seed.
 
 **M1 – base comparison on the paper's own map.** Mean mission time, static roads, 100 instances (min). `paper` = the base paper's exact road
 (reconstructed from the authors' code). Ours: 600 imitation + 400 REINFORCE steps, then 1500 more REINFORCE steps (group baseline), CPU only:
@@ -121,7 +121,7 @@ Each map was trained from scratch for 3 seeds (800 imitation + 1200 REINFORCE st
 | **ours, trained P0 greedy, paper map, +1500 steps** | **228.1 ± 37** | **209.8 ± 42** | **185.1 ± 43** | **219.0 ± 59** |
 
 After the extra training our greedy policy is within about 10 % of the paper's greedy DRL for three of four teams (1U-1G −4 %, 2U-1G −9 %, 2U-2G +3 %) and the
-team ordering matches; **4U-2G is still +16 %** (our P0 does not exploit four UAVs). The paper's sampled-decoding column (10240 samples) is not reproduced.
+team ordering matches; **4U-2G is still +16 %** (our P0 does not exploit four UAVs). With 10,240 samples our policy gets 197.5 / 157.2 / 135.3 / 135.2 min, below the paper's sampled column (our map and instances are reconstructions, so this is indicative only).
 Standard deviations are ±37-59 min over instances, so the 1U-1G, 2U-1G and 2U-2G differences are within noise. Zero-shot on the larger U45G15 size (loop map, 2U-1G) our P0 takes ≈ 349 min (paper greedy 339).
 
 **Hypotheses** (2U-1G; 2U-2G in `results/REPORT.md`):
@@ -165,7 +165,7 @@ Standard deviations are ±37-59 min over instances, so the 1U-1G, 2U-1G and 2U-2
   | 4U-2G | -69.9 % | -69.2 % | 76 -> 0 % |
 
   The saving follows how long UAVs wait; with one UAV the UGV is rarely a bottleneck, so there is little to save. With sampling + budget filter (P1, 2U-1G, static): -0.83 min and -46.2 % energy, over budget 31 -> 0 %.
-* **10,240-sample decoding** (paper's map, 50 instances, kernel `edr-sampling10240`): see below when finished.
+* **10,240-sample decoding:** see the sampled-decoding bullet above (`results/sampling_eval_10240.csv`).
 
 ## Energy trade-off diagnostic (why H1/H2 do not show up) — `scripts/tradeoff_study.py`
 
