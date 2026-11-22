@@ -5,8 +5,10 @@
 - Deck: `presentation_final/Presentation.pdf` (+ `Presentation_overleaf.zip`). Rebuild: `cd presentation_final && TEXMFHOME=$PWD/.texlocal/usr/share/texlive/texmf-dist python3 build.py` (needs `.texlocal`, not in git; figures: `python3 make_figs.py`).
 - Done: P1 + JIT across 4 maps x 3 seeds, JIT re-prediction, adaptive sampling (neutral), 10240-sample decoding, fallback, 4U-2G more training (no gain), Gazebo test bed (flat + real terrain), 12 Gazebo replays collected (`implementation/gazebo/gazebo_vs_plan.csv`).
 
-## In progress (on the friend's Ubuntu laptop, user `sudhanshu`, IP 10.215.19.219, key `~/.ssh/friend_gazebo`)
-- 10 unfinished Gazebo replays relaunched with `GZ_IP=127.0.0.1` (the old ones hung after the Wi-Fi changed): flat `~/RM_gazebo/runs` (border typical/worst x open/event, loop typical open, loop best x2), terrain `~/RM_gazebo_t/runs_terrain` (border best open, worst x2). ETA about 01:30 IST. Needs the laptop awake and on the same network. Logs: `*.run3.log`.
+## Gazebo runs STOPPED by the user (2026-11-23 ~00:55 IST)
+- The 10 unfinished replays were killed on the friend's laptop (nothing is running; the laptop itself is untouched). 12 runs are collected and in the deck/CSV (9 flat, 3 terrain). Missing: flat border typical/worst x open/event, loop typical open, loop best x2, terrain border best open, worst x2.
+- To redo them (about 45 min + 10 min wrap-up; only if started before ~3:00 am): the friend's Ubuntu laptop (user `sudhanshu`, key `~/.ssh/friend_gazebo`, IP changes with the Wi-Fi: ask `hostname -I`) must be awake and on the same network; run `ssh ... 'sh ~/relaunch.sh'` (already on the laptop; uses `GZ_IP=127.0.0.1`), then `implementation/gazebo/collect.sh` (edit the IP in it) and `analyze.py`.
+- Otherwise freeze the deck as it is (12 runs, slide says 4 more were not collected; with this stop it is now 10 not collected: update that sentence to "10 more runs were not completed in time" in `presentation_final/body.tex` and `implementation/gazebo/README.md`).
 
 ## To finish (about 10 min after the runs end)
 1. `cd implementation/gazebo && ./collect.sh && python3 analyze.py` (collect.sh already has the new IP).
