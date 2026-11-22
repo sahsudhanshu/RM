@@ -430,12 +430,12 @@ $B=\beta B_0$, with $B_0$ = base-policy energy on the same static instance
 \centering
 \begin{tikzpicture}[font=\scriptsize]
   \foreach \i/\l/\r in {
-    0/{No implementation, only a plan}/{Simulator + learned policy, 32 tests},
+    0/{No implementation, only a plan}/{Simulator + learned policy, 35 tests},
     1/{Base method not verified}/{Compared with \cite{base} on its own map},
     2/{Unknown details: $T_R$, road map}/{Confirmed from the authors' code~\cite{code}},
     3/{Only tree roads: no detours}/{Maps with loops: ring, border, district},
     4/{Energy gain only illustrated}/{Measured: 4 maps $\times$ 3 seeds $\times$ 100 instances},
-    5/{Physics not validated}/{3D replay built; Gazebo link still open}} {
+    5/{Physics not validated}/{3D replay and Gazebo replay of the plans}} {
     \node[fred, text width=4.6cm] (l\i) at (0,-\i*1.05) {\l};
     \ifnum\i=5 \node[famber, text width=5.2cm] (r\i) at (8.9,-\i*1.05) {\r};
     \else \node[fteal, text width=5.2cm] (r\i) at (8.9,-\i*1.05) {\r}; \fi
@@ -453,7 +453,7 @@ $B=\beta B_0$, with $B_0$ = base-policy energy on the same static instance
   \node[fteal, text width=2.2cm] (d) at (8.7,0)  {\textbf{M4}\\ Train, evaluate, ablate};
   \node[fnavy, text width=2.2cm] (e) at (11.6,0) {Analyse and demo};
   \foreach \x/\y in {a/b,b/c,c/d,d/e} \draw[ar] (\x) -- (\y);
-  \foreach \x/\t in {a/{close to \cite{base} on its map}, b/{E = flight + hover}, c/{events + masks}, d/{4 maps, 3 seeds}, e/{3D replay}}
+  \foreach \x/\t in {a/{close to \cite{base} on its map}, b/{E = flight + hover}, c/{events + masks}, d/{4 maps, 3 seeds}, e/{3D and Gazebo replay}}
     \node[lab, below=3mm of \x] {\t};
 \end{tikzpicture}
 \end{frame}
@@ -492,7 +492,7 @@ $B=\beta B_0$, with $B_0$ = base-policy energy on the same static instance
   \draw[ar] (f.west) -| node[pos=0.25,below,lab]{next round} (a.south);
   \draw[arr] (ev) -- (e);
 \end{tikzpicture}\\[2mm]
-{\small 32 automated tests, including a hand-checkable 1U-1G case.}
+{\small 35 automated tests, including a hand-checkable 1U-1G case.}
 \end{frame}
 
 \begin{frame}{5 \,Step 3: Event-Triggered Replanning (M3)}
@@ -683,7 +683,7 @@ Periodic & every recharge\\[1mm]
 \end{column}
 \end{columns}
 \vspace{2mm}
-\begin{tikzpicture}\node[fgray, text width=12.5cm]{Interactive 3D replay: 18 scenarios on 3 maps; each setting shows the \textbf{best}, a \textbf{typical} and the \textbf{worst} case, plus failures.};\end{tikzpicture}
+\begin{tikzpicture}\node[fgray, text width=12.5cm]{Interactive 3D replay: 18 scenarios on 3 maps; each setting shows the \textbf{best}, a \textbf{typical} and the \textbf{worst} case, plus failures. Gazebo videos replay the plans on flat ground and on real terrain.};\end{tikzpicture}
 \end{frame}
 
 \begin{frame}{6 \,Gazebo Test Bed: Replaying the Plans in Physics}
@@ -711,7 +711,7 @@ Periodic & every recharge\\[1mm]
 \begin{frame}{6 \,Gazebo Confirms the Plans}
 \centering
 \includegraphics[width=0.97\linewidth]{assets/fig_gazebo.png}\\[0.5mm]
-{\small 12 replays (9 on flat ground, 3 on real terrain; border, paper and ring-road maps; open-loop and event-triggered). Mission time differs from the plan by at most 0.8\,min (0.13\% flat, 0.21\% terrain on average) and UAV energy by at most 0.5\%. The UGV reaches rendezvous 10 to 16\,s late on average, so the plans are physically achievable. It is a consistency check of the plans, not a test of the learned policy; a further 10 runs of the planned set were not completed in time.}
+{\small 22 replays (16 on flat ground, 6 on real terrain; border, paper and ring-road maps; open-loop and event-triggered). Mission time differs from the plan by at most 0.8\,min (0.12\% flat, 0.19\% terrain on average) and UAV energy by at most 0.5\%. The UGV reaches rendezvous 11 to 16\,s late on average, so the plans are physically achievable. It is a consistency check of the plans, not a test of the learned policy.}
 \end{frame}
 
 \begin{frame}{6 \,Did the Hypotheses Hold?}
@@ -721,7 +721,7 @@ Periodic & every recharge\\[1mm]
 \toprule
 \textbf{Hypothesis} & & \textbf{Evidence}\\
 \midrule
-H1 energy falls, time barely rises & \pmark & \xmark for routes (time and energy move together); \cmark for departure timing: $-$53 to $-$74\% energy, $+0$ min\\
+H1 energy falls, time barely rises & \pmark & \xmark\ for routes (time and energy move together); \cmark\ for departure timing: $-$53 to $-$74\% energy, $+0$ min\\
 H2 constrained beats fixed penalty & \xmark & A and B equal the control on all maps\\
 H3 more disruption, more energy & \cmark & up to +29\% energy, early events worst\\
 H4 same reliability, fewer replans & \cmark & same time, 1 to 3 fewer replans\\
@@ -742,7 +742,7 @@ M2 Energy accounting, $\lambda$ & \pmark & $\lambda$ settles at feasible budgets
 M3 Dynamic roads, event replanning & \cmark & works on 4 maps; matches periodic with fewer replans\\
 M4 Ablations, seeds, scaling & \cmark & 3 seeds, 4 maps, 4 team sizes, 45 and 75 tasks\\
 Gate: do road events matter (H3)? & \cmark & yes: up to $+29\%$ energy, early events worst\\
-Added: just-in-time, fallback, baselines & \cmark & $-18$ to $-69\%$ energy at no time cost; fallback; GLS, Tabu, SA compared\\
+Added: just-in-time, fallback, baselines & \cmark & $-18$ to $-69\%$ energy at no time cost; with sampling $-20\%$ time and $-65\%$ energy; fallback; GLS, Tabu, SA\\
 Gazebo physics testbed & \pmark & plans replayed in Gazebo (wheeled UGV, real terrain); the policy itself is not run inside it\\
 \bottomrule
 \end{tabular}\\[3mm]

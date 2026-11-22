@@ -29,10 +29,14 @@ python3 replay.py "plans/<case>__event.json" --terrain terrain/thar24 --out runs
 ```
 Parallel runs need distinct `--partition` names (default: one per process).
 
-## Results (12 replays collected: 9 flat ground, 3 real terrain; `gazebo_vs_plan.csv`)
+## Results (22 replays: 16 flat ground, 6 real terrain; `gazebo_vs_plan.csv`)
+Cases: border, paper and ring-road maps (typical, best and worst cases, open-loop and event-triggered); terrain: the three border cases.
+
 | | n | mean abs. time difference | max | UAV energy difference (mean) | UGV arrival delay (mean / worst drive) |
 |---|---|---|---|---|---|
-| flat ground | 9 | 0.13 % | 0.75 min | +0.16 % | 10.5 s / 45 s |
-| real terrain | 3 | 0.21 % | 0.77 min | +0.33 % | 15.7 s / 46 s |
+| flat ground | 16 | 0.12 % | 0.75 min | +0.17 % | 11.0 s / 45 s |
+| real terrain | 6 | 0.19 % | 0.77 min | +0.28 % | 15.9 s / 46 s |
 
-The plans are physically achievable and the planned time and energy reproduce to within a fraction of a percent. This checks the plans; the learned policy is not run inside Gazebo, UAV flight is kinematic, and the UGV follows the planned timetable. A further 10 runs of the planned set (border typical and worst on flat ground, ring-road typical open and best, and 3 border runs on terrain) were stopped before finishing and are not included. Terrain renders show a small cosmetic speckle artefact; the elevation data has no spikes.
+The plans are physically achievable and the planned time and energy reproduce to within a fraction of a percent. This checks the plans; the learned policy is not run inside Gazebo, UAV flight is kinematic, and the UGV follows the planned timetable. Terrain renders show a small cosmetic speckle artefact; the elevation data has no spikes.
+
+Gazebo's transport binds to the machine's network address; if the machine changes network mid-run the replays hang. Run with `GZ_IP=127.0.0.1` (all local) to avoid that.

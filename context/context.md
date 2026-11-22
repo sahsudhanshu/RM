@@ -198,7 +198,7 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 ## 9. Status (2026-11-22)
 
 * [x] Context gathered; initial files in `context/`; base papers + authors' code downloaded to `context/base_papers/`.
-* [x] Implementation, 32 tests, experiments (2U-1G/2U-2G local; **4 maps x 3 seeds on Kaggle**), figures, report, 2D video, **3D browser viewer (18 scenarios incl. worst and failed cases)**.
+* [x] Implementation, 35 tests, experiments (2U-1G/2U-2G local; **4 maps x 3 seeds on Kaggle**), figures, report, 2D video, **3D browser viewer (18 scenarios incl. worst and failed cases)**.
 * [x] M1: base policy within ~10 % of the paper's greedy DRL on the paper's own map for 3 of 4 teams (4U-2G +16 %).
 * [~] M2: lambda stabilises at feasible budgets (beta 1.0, 0.95), saturates at 0.9: partly met.
 * [x] Stage C: zero-shot U45G15 done (1 seed, 50 instances); U75G25 not done.

@@ -26,6 +26,7 @@ Units: km, min, kJ. Everything below was run on a CPU-only laptop (12 cores, no 
 | Ablations: remove budget input, fixed vs Lagrangian, none/periodic/event, train with/without road events, Euclid vs road assignment | `scripts/experiments.py` |
 | Stages A (static budgets), B (blocked/slow roads), stress test (disconnecting block), M1 trend check | `scripts/experiments.py`, `scripts/validate_m1.py` |
 | Demonstration simulation (open-loop vs event-triggered, same instance and event) | 2D video: `scripts/make_animation.py`, `src/edr/viz.py`; **3D browser viewer** (Three.js, 4 scenarios): `scripts/export_viewer_data.py` → `scripts/build_viewer.py` → `viewer/index.html` (self-contained, open it directly in a browser) |
+| Physics replay of the planned missions in Gazebo Harmonic (wheeled UGV, real-terrain heightmap, headless, MP4) | `gazebo/` (see `gazebo/README.md`) |
 
 ## Maps
 
@@ -107,7 +108,7 @@ Each map was trained from scratch for 3 seeds (800 imitation + 1200 REINFORCE st
 * **GLS / Tabu / SA baselines (`src/edr/bilevel.py`, `scripts/bilevel_eval.py`; paper map, 100 instances, 3-4 failures excluded):** our OR-Tools bilevel pipeline (min set cover -> stop-order TSP -> capacity-constrained UAV sorties, executed in our simulator) gives GLS 279 / 208 / 198 / 175 min vs the paper's 281.7 / 232.8 / 188.3 / 219.7: close for 1U-1G, +-10-20 % otherwise, so the same ballpark, not an exact reproduction. GLS, Tabu and SA differ by < 1 % here.
 * **Lambda (M2) with the cap raised to 50 and 1500 steps (`p3h_*`, greedy-validation-driven):** lambda now **settles** instead of hitting the cap: ~5.1 (std 0.15) at beta = 1.0 (residual violation +0.03) and ~13.4 (std 0.5) at beta = 0.9 (residual violation +0.16: the budget is still not met). M2's "lambda converges" criterion is met; the 0.9 budget is infeasible for the greedy policy.
 * **Candidates A/B fix attempt - search distillation (`expert_iteration`, variants bon_t / bon_nb / bon_p4x):** the best of 32 sampled routes is ~25 % faster than the average sample (elite T 130-155 vs 170-200 min), but imitating it did **not** transfer: greedy validation time stays between 182 and 240 min and ends no better than the control (all variants T = 218.6-220.4 vs control 220.2; budget-aware equals budget-blind). Negative result; checkpoint selection was not tried.
-* **Still not done:** Gazebo coupling (skipped by choice). Done since: 10240-sample decoding, loop-detection fallback for the bad seed.
+* **Gazebo:** plans are replayed in Gazebo Harmonic (see `gazebo/README.md`); the learned policy itself is not run inside Gazebo. Done since: 10240-sample decoding, loop-detection fallback for the bad seed.
 
 **M1 – base comparison on the paper's own map.** Mean mission time, static roads, 100 instances (min). `paper` = the base paper's exact road
 (reconstructed from the authors' code). Ours: 600 imitation + 400 REINFORCE steps, then 1500 more REINFORCE steps (group baseline), CPU only:
@@ -220,4 +221,4 @@ Standard deviations are ±37-59 min over instances, so the 1U-1G, 2U-1G and 2U-2
    `t_ref` (scale only) is the mean P0 validation time, inflated by one failed instance (269 min for 2U-1G).
 8. **B0** is P0's greedy energy on the same static instance (instances where P0 itself fails are skipped in the test set; in training the rule-based run is used).
 9. **Test events** are placed on the UGV's upcoming drive in the base policy's static run, so every event bites; "blocked" events keep the graph connected except in the stress test.
-10. Metaheuristic baselines (GLS/TS/SA with OR-Tools) and Stage C (larger sizes), Gazebo integration were **not** implemented.
+10. Metaheuristic baselines (GLS/TS/SA with OR-Tools) and Stage C (larger sizes) are implemented (see the sections above). Gazebo: the planned missions are replayed in physics (`gazebo/`), but the learned policy is not run inside Gazebo and UAV flight is kinematic.
