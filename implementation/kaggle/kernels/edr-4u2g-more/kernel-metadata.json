@@ -1,0 +1,3 @@
+{"id": "vichanshur/edr-4u2g-more", "title": "EDR 4U2G more", "code_file": "entry.py", "language": "python", "kernel_type": "script",
+ "is_private": true, "enable_gpu": false, "enable_internet": false,
+ "dataset_sources": ["vichanshur/edr-code", "vichanshur/edr-p0-4u2g"], "competition_sources": [], "kernel_sources": []}

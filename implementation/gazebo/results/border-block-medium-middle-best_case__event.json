@@ -1,0 +1,22 @@
+{
+ "id": "border-block-medium-middle-best case__event",
+ "case": "border-block-medium-middle-best case",
+ "mode": "event",
+ "T_plan_s": 11186.699999999999,
+ "T_gz_s": 11231.800000002524,
+ "T_legs_plan_s": 10283.58,
+ "E_plan": 3962.582,
+ "E_gz": 3982.5970399991975,
+ "E_legs": 904.258,
+ "wait_plan_s": 13320.24,
+ "wait_plan_from_services_s": 13320.239999999996,
+ "wait_gz_s": 13407.399999996504,
+ "ugv_drives": 36,
+ "ugv_arrival_err_mean_s": 19.619999997853963,
+ "ugv_arrival_err_max_s": 45.09999999597676,
+ "ugv_arrival_err_final_s": 45.09999999597676,
+ "uav_snaps": 0,
+ "sim_s": 11232.2000000058,
+ "wall_s": 978.9001183509827,
+ "unfinished": false
+}

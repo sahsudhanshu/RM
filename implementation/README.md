@@ -167,6 +167,25 @@ Standard deviations are ±37-59 min over instances, so the 1U-1G, 2U-1G and 2U-2
   The saving follows how long UAVs wait; with one UAV the UGV is rarely a bottleneck, so there is little to save. With sampling + budget filter (P1, 2U-1G, static): -0.83 min and -46.2 % energy, over budget 31 -> 0 %.
 * **10,240-sample decoding:** see the sampled-decoding bullet above (`results/sampling_eval_10240.csv`).
 
+### More training for 4U-2G did not help (Kaggle `edr-4u2g-more`)
+
+3000 more REINFORCE steps (paper map, 3 seeds, greedy T on 100 instances; before -> after): seed 0 214.9 -> 208.2, seed 1 211.1 -> 213.7, seed 2 206.5 -> 207.3 min; mean 210.8 -> 209.7 min vs the paper's greedy 188.9. The gap to the paper's greedy decoding stays ~11 %; sampled decoding (best of 10,240: 135 min vs the paper's 160) is what closes it.
+
+### Headline: sampling + budget filter + just-in-time departure, and what was tuned (`scripts/jit_p1_maps.py`, `jit_refine_study.py`, `adaptive_sampling.py`)
+
+* **P1 + JIT on 4 maps x 3 seeds** (2U-1G, Kaggle base policies, 24 instances per map/seed, budget 0.9 B0; `results/jit_p1_maps.csv`; mean over the 12 map-seed pairs, no failures):
+
+  | | static roads: T (min) / E (kJ) / over budget | 4 road events: T / E / over budget |
+  |---|---|---|
+  | base policy | 228.0 / 4407 / 78 % | 270.0 / 5531 / 91 % |
+  | base + JIT | 228.0 / 1562 / 0 % | 270.0 / 1971 / 1 % |
+  | sampling + budget filter (64 samples) | 182.8 / 3248 / 16 % | 206.0 / 3849 / 40 % |
+  | **sampling + filter + JIT** | **182.3 / 1524 / 0 %** | **205.3 / 1841 / 2 %** |
+
+  So the combination is 20 % faster, 65 % less UAV energy, and fits the budget (per map: loop 210 -> 175 min and 3770 -> 1676 kJ; paper 199 -> 168 / 3624 -> 1530; border 150 -> 122 / 2832 -> 954; geo 353 -> 264 / 7401 -> 1937, static roads). JIT's energy saving assumes UAVs can wait on the ground at no cost (see caveats above).
+* **JIT with re-prediction at takeoff** (`env.jit_refine`; the UAV re-checks the UGV's arrival with the roads known when it actually takes off, so events that happen during the ground wait are included). Base policy, event-triggered, 2U-1G, 4 maps x 2 seeds x 18 events (`results/jit_refine.csv`): hover energy 3070 kJ (no JIT) -> 241 (JIT) -> **80** (re-predicted); total energy 4480 -> 1651 -> **1490** kJ; time unchanged (226.2 min); over budget 85 % -> 1 % -> 0 %.
+* **Adaptive number of samples** (`route_filter_planner(adaptive=True)`: samples in chunks of 16 and stops when a route fits the budget and two chunks improved the best time by < 1 %). Result: **neutral**. With JIT the budget is rarely tight, so it stops at ~61 samples and matches fixed-64 (T 182.6 vs 182.3 static; 210.8 vs 211.6 events). The useful finding is the samples-quality curve (static / events): 16 samples 190.8 / 223.8 min, 64: 182.3 / 211.6, 256: 174.0 / 199.5, i.e. about -4 to -5 % time per 4x samples at 4x the planning cost (0.9 s, 2.7 s, 9.7 s per batch of 24). A tighter stopping rule or a bigger sample cap is the lever, not adaptivity.
+
 ## Energy trade-off diagnostic (why H1/H2 do not show up) — `scripts/tradeoff_study.py`
 
 60 instances x 128 sampled routes from P0 (loop map, 2U-1G). Per instance, the lowest-energy route vs the fastest route:

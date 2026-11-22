@@ -1,0 +1,22 @@
+{
+ "id": "border-block-medium-middle-typical case__open",
+ "case": "border-block-medium-middle-typical case",
+ "mode": "open",
+ "T_plan_s": 12700.86,
+ "T_gz_s": 10341.399999999285,
+ "T_legs_plan_s": 6076.74,
+ "E_plan": 4287.012,
+ "E_gz": 2983.41023999974,
+ "E_legs": 1084.7559999999999,
+ "wait_plan_s": 13947.119999999999,
+ "wait_plan_from_services_s": 13947.18,
+ "wait_gz_s": 8269.399999998868,
+ "ugv_drives": 38,
+ "ugv_arrival_err_mean_s": 13.330526314344617,
+ "ugv_arrival_err_max_s": 33.09999999928368,
+ "ugv_arrival_err_final_s": 8.940000006092305,
+ "uav_snaps": 0,
+ "sim_s": 11522.800000006857,
+ "wall_s": 1005.1998310089111,
+ "unfinished": true
+}

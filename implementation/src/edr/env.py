@@ -30,6 +30,7 @@ class Request:
     task: int           # ground task index where the UAV landed
     node: int           # road node of that task
     touchdown: float
+    t_dep: float = 0.0   # when the sortie that ends in this landing started (for just-in-time re-prediction)
 
 
 @dataclass
@@ -73,6 +74,7 @@ class MissionEnv:
         self.belief: RoadState = NORMAL              # what the planner knows
         self.road_aware = road_aware
         self.divert = False                          # replanning controllers may re-target a stranded UAV
+        self.jit_refine = False                      # re-predict the UGV arrival at the (delayed) takeoff time, with the roads known then
         self.jit = False                             # just-in-time departure: a UAV that expects to wait waits on the ground (free) instead of hovering
         self.assign_metric = assign_metric
         self.roads = scenario.roads
@@ -86,6 +88,7 @@ class MissionEnv:
         self.visited[depot] = True
         self.cur = np.full(self.M, depot, dtype=int)           # task index of each UAV
         self.t_uav = np.zeros(self.M)
+        self.sortie_start = np.zeros(self.M)
         self.fuel = np.full(self.M, params.fuel_kj)
         self.e_fly = np.zeros(self.M)
         self.e_wait = np.zeros(self.M)
@@ -118,7 +121,7 @@ class MissionEnv:
                 setattr(new, k, list(v))
             else:
                 setattr(new, k, v)
-        new.pending = [Request(r.uav, r.task, r.node, r.touchdown) for r in self.pending]
+        new.pending = [Request(r.uav, r.task, r.node, r.touchdown, r.t_dep) for r in self.pending]
         return new
 
     def with_timeline(self, events=()) -> "MissionEnv":
@@ -340,7 +343,7 @@ class MissionEnv:
                           "land" if land else "visit", float(e), self.rounds))
         self.actions.append((self.rounds, u, int(action)))
         if land:
-            self.pending.append(Request(u, target, int(self.scn.node[target]), float(self.t_uav[u])))
+            self.pending.append(Request(u, target, int(self.scn.node[target]), float(self.t_uav[u]), float(self.sortie_start[u])))
             self._cur_uav = None
         else:
             self.sortie_has_task = True
@@ -376,6 +379,12 @@ class MissionEnv:
             d_b = self.roads.dist_matrix(self.belief)[int(self.ugv_node[n]), r.node]
             if np.isfinite(d_b):
                 predicted = max(0.0, self.ugv_time[n] + d_b / self.p.ugv_kmmin - r.touchdown)
+                for _ in range(3 if self.jit_refine else 0):      # events that occur while the UAV waits on the ground are known at takeoff
+                    d_t = self.roads.dist_matrix(self.timeline.state_at(r.t_dep + predicted))[int(self.ugv_node[n]), r.node]
+                    if not np.isfinite(d_t): break
+                    p2 = max(predicted, self.ugv_time[n] + d_t / self.p.ugv_kmmin - r.touchdown)
+                    if p2 <= predicted + 1e-6: break
+                    predicted = p2
         while True:
             arrival, trace = self.roads.travel(int(self.ugv_node[n]), r.node, float(self.ugv_time[n]),
                                                self.p.ugv_kmmin, self.timeline.state_at)
@@ -398,6 +407,7 @@ class MissionEnv:
         self.e_wait[r.uav] += (wait - delay) * self.p.hover_kj_per_min
         self.wait_t[r.uav] += wait
         self.t_uav[r.uav] = end
+        self.sortie_start[r.uav] = end
         self.fuel[r.uav] = self.p.fuel_kj
         self.ugv_node[n], self.ugv_time[n] = r.node, end
         self.services.append(dict(

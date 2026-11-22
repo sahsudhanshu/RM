@@ -22,3 +22,8 @@ implementation/out/
 context/base_papers/authors_code_multi-uav-ugv-drl/
 # per-instance raw result tables from Kaggle runs (summaries/reports/figures are kept)
 implementation/results_kaggle/**/stage*.csv
+
+# Gazebo: tile caches, run folders, recordings stay local
+implementation/gazebo/terrain/*/t_*.png
+implementation/gazebo/runs*/
+implementation/gazebo/videos*/

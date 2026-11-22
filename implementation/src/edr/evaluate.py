@@ -77,9 +77,11 @@ def heuristic_planner():
     return lambda env, horizon: rollout_plan(env, nearest_feasible, horizon)
 
 
-def route_filter_planner(model: RouteModel, n_samples: int = 64, seed: int = 0):
+def route_filter_planner(model: RouteModel, n_samples: int = 64, seed: int = 0, adaptive: bool = False, n_max: int = 256,
+                         chunk: int = 16, patience: int = 2):
     """P1: sample routes from the base policy and keep the fastest one with E <= B
-    (if none fits the budget, the lowest-energy route)."""
+    (if none fits the budget, the lowest-energy route). adaptive: draw samples in chunks and stop once a route fits the
+    budget and `patience` chunks in a row improved the best time by < 1 %; a tight budget therefore gets more samples (up to n_max)."""
     torch.manual_seed(seed)
     model = model.eval()
 
@@ -89,11 +91,25 @@ def route_filter_planner(model: RouteModel, n_samples: int = 64, seed: int = 0):
         base_world.belief = env.belief
         base_world._refresh_ground_info()
         n0, r0 = len(base_world.actions), base_world.rounds
-        worlds = [base_world.clone() for _ in range(n_samples)]
-        rollout(model, worlds[1:], "sample")
-        rollout(model, worlds[:1], "greedy")
-        res = [w.result() for w in worlds]
         budget = env.budget
+        if adaptive:
+            worlds, res, best_t, stale = [], [], float("inf"), 0
+            while len(worlds) < n_max:
+                new = [base_world.clone() for _ in range(chunk)]
+                if not worlds: rollout(model, new[:1], "greedy"); rollout(model, new[1:], "sample")
+                else: rollout(model, new, "sample")
+                worlds += new; res += [w.result() for w in new]
+                fit = [r.makespan for r in res if not r.failed and (budget is None or r.energy <= budget + 1e-6)]
+                if fit:
+                    if min(fit) < best_t * 0.99: best_t, stale = min(fit), 0
+                    else: stale += 1
+                    if stale >= patience: break
+        else:
+            worlds = [base_world.clone() for _ in range(n_samples)]
+            rollout(model, worlds[1:], "sample")
+            rollout(model, worlds[:1], "greedy")
+            res = [w.result() for w in worlds]
+        plan.used.append(len(worlds))
         ok = [i for i, r in enumerate(res) if not r.failed and (budget is None or r.energy <= budget + 1e-6)]
         if ok:
             best = min(ok, key=lambda i: res[i].makespan)
@@ -104,6 +120,7 @@ def route_filter_planner(model: RouteModel, n_samples: int = 64, seed: int = 0):
         waits = {(sv["round"] - r0, sv["uav"]): sv["wait"] for sv in w.services if sv["round"] >= r0}
         return Plan(_group_rounds(w.actions[n0:], r0), waits, r.energy, r.makespan, r.failed)
 
+    plan.used = []
     return plan
 
 
@@ -120,6 +137,9 @@ class Spec:
     n_samples: int = 64
     tau_wait: float = 5.0
     jit: bool = False                    # just-in-time departure (see env.jit)
+    jit_refine: bool = False             # re-predict the UGV arrival at takeoff time (env.jit_refine)
+    adaptive: bool = False               # route_filter: adaptive number of samples (up to n_max)
+    n_max: int = 256
 
 
 _MODELS: dict[str, RouteModel] = {}
@@ -138,11 +158,12 @@ def run_one(s: Setting, case: Case, spec: Spec, beta: float | None, event: RoadE
     # Only budget-aware policies see B (decoder input b_t and the replanning trigger); the
     # budget-blind ones are merely scored against it.
     env.jit = spec.jit
+    env.jit_refine = spec.jit_refine
     env.budget = budget if (spec.use_budget or spec.kind == "route_filter") else None
     if spec.kind == "heuristic":
         planner = heuristic_planner()
     elif spec.kind == "route_filter":
-        planner = route_filter_planner(_model(spec.model_path), spec.n_samples, seed=case.seed)
+        planner = route_filter_planner(_model(spec.model_path), spec.n_samples, seed=case.seed, adaptive=spec.adaptive, n_max=spec.n_max)
     else:
         planner = greedy_planner(_model(spec.model_path))
     res, info = run_controller(env, planner, spec.mode, tau_wait=spec.tau_wait)
@@ -153,7 +174,7 @@ def run_one(s: Setting, case: Case, spec: Spec, beta: float | None, event: RoadE
         B=budget if budget is not None else float("nan"), B0=case.b0, T0=case.t0,
         over=int(budget is not None and res.energy > budget + 1e-6),
         overshoot=max(0.0, res.energy - budget) / case.b0 if budget is not None else 0.0,
-        event_t=event.t if event else float("nan"),
+        event_t=event.t if event else float("nan"), samples=sum(getattr(planner, "used", [])),
     )
 
 

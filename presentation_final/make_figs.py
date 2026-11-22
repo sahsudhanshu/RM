@@ -248,3 +248,37 @@ axs[1].set_xticks([0], ["sampling + budget filter (2U-1G)"], fontsize=9); axs[1]
 fig.legend(handles=[plt.Rectangle((0, 0), 1, 1, color=GRAY), plt.Rectangle((0, 0), 1, 1, color=TEAL)], labels=["depart immediately", "just-in-time departure"], loc="lower center", ncol=2, frameon=False, fontsize=10)
 fig.tight_layout(rect=(0, 0.08, 1, 1)); fig.savefig(f"{OUT}/fig_jit_teams.png", dpi=200); plt.close(fig)
 print("jit teams figure done")
+
+# ---- 13. Gazebo replay: planned vs physics (implementation/gazebo/gazebo_vs_plan.csv)
+gzr = read(os.path.join(IMPL, "gazebo", "gazebo_vs_plan.csv"))
+fig, axs = plt.subplots(1, 3, figsize=(10.6, 3.4), gridspec_kw=dict(width_ratios=[1.1, 1, 1]))
+for gname, col, mk in (("flat", TEAL, "o"), ("terrain", AMBER, "s")):
+    rr = [r for r in gzr if r["ground"] == gname]
+    if rr: axs[0].scatter([float(r["T_plan_min"]) for r in rr], [float(r["T_gz_min"]) for r in rr], c=col, marker=mk, s=38, label=f"{gname} ground (n={len(rr)})", edgecolors="white", linewidths=.6)
+lim = [min(float(r["T_plan_min"]) for r in gzr) - 15, max(float(r["T_plan_min"]) for r in gzr) + 15]; axs[0].plot(lim, lim, color=GRAY, lw=1, ls="--")
+axs[0].set_xlabel("mission time, our simulator (min)"); axs[0].set_ylabel("mission time, Gazebo (min)"); axs[0].legend(frameon=False, fontsize=8.5, loc="upper left"); axs[0].set_title("Mission time", loc="left", fontsize=11)
+for gname, col in (("flat", TEAL), ("terrain", AMBER)):
+    rr = [r for r in gzr if r["ground"] == gname]
+    if rr: axs[1].scatter([float(r["E_plan_kJ"]) / 1000 for r in rr], [float(r["E_gz_kJ"]) / 1000 for r in rr], c=col, s=36, edgecolors="white", linewidths=.6)
+elim = [min(float(r["E_plan_kJ"]) for r in gzr) / 1000 - .4, max(float(r["E_plan_kJ"]) for r in gzr) / 1000 + .4]; axs[1].plot(elim, elim, color=GRAY, lw=1, ls="--")
+axs[1].set_xlabel("UAV energy, simulator (MJ)"); axs[1].set_ylabel("UAV energy, Gazebo (MJ)"); axs[1].set_title("UAV energy", loc="left", fontsize=11)
+vals = [(g, np.mean([float(r["ugv_err_mean_s"]) for r in gzr if r["ground"] == g]), np.max([float(r["ugv_err_max_s"]) for r in gzr if r["ground"] == g])) for g in ("flat", "terrain") if any(r["ground"] == g for r in gzr)]
+axs[2].bar(np.arange(len(vals)) - .18, [v[1] for v in vals], .36, color=TEAL, label="mean"); axs[2].bar(np.arange(len(vals)) + .18, [v[2] for v in vals], .36, color=GRAY, label="worst drive")
+axs[2].set_xticks(np.arange(len(vals)), [v[0] for v in vals]); axs[2].set_ylabel("UGV arrival delay (s)"); axs[2].set_ylim(0, 62); axs[2].legend(frameon=False, fontsize=8.5, loc="upper left"); axs[2].set_title("UGV arrival vs plan", loc="left", fontsize=11)
+fig.tight_layout(); fig.savefig(f"{OUT}/fig_gazebo.png", dpi=200); plt.close(fig)
+print("gazebo figure done")
+
+# ---- 14. headline: sampling + budget filter and just-in-time departure, 4 maps x 3 seeds (scripts/jit_p1_maps.py)
+hp = read(os.path.join(IMPL, "results", "jit_p1_maps.csv"))
+cfgs = [("P0 base", "0", "base policy"), ("P0 base", "1", "+ just-in-time"), ("P1 sampling + budget filter", "0", "sampling + budget filter"), ("P1 sampling + budget filter", "1", "both")]
+cols = [GRAY, LIGHT, TEAL, NAVY]
+fig, axs = plt.subplots(1, 3, figsize=(10.8, 3.5), gridspec_kw=dict(width_ratios=[1, 1, 1]))
+for ax, (key, ylab, scale) in zip(axs, (("T", "mission time (min)", 1), ("E", "UAV energy (MJ)", 1e-3), ("over09", "over the 0.9 budget (%)", 100))):
+    for sc, off in (("static", 0), ("events", 5)):
+        for k, (pol, j, lab) in enumerate(cfgs):
+            v = np.mean([float(r[key]) for r in hp if r["policy"] == pol and int(float(r["jit"])) == int(j) and r["scenario"] == sc]) * scale
+            ax.bar(off + k * .9, v, .8, color=cols[k], label=lab if sc == "static" else None)
+    ax.set_xticks([1.35, 6.35], ["static roads", "road events"]); ax.set_ylabel(ylab)
+h, l = axs[0].get_legend_handles_labels(); fig.legend(h, l, loc="lower center", ncol=4, frameon=False, fontsize=9.5)
+fig.tight_layout(rect=(0, 0.08, 1, 1)); fig.savefig(f"{OUT}/fig_headline.png", dpi=200); plt.close(fig)
+print("headline figure done")

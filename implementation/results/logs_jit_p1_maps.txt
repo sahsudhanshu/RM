@@ -1,0 +1,13 @@
+loop seed 0 done
+loop seed 1 done
+loop seed 2 done
+paper seed 0 done
+paper seed 1 done
+paper seed 2 done
+border seed 0 done
+border seed 1 done
+border seed 2 done
+geo seed 0 done
+geo seed 1 done
+geo seed 2 done
+wrote results/jit_p1_maps.csv

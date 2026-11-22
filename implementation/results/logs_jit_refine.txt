@@ -1,0 +1,9 @@
+loop 0 done
+loop 1 done
+paper 0 done
+paper 1 done
+border 0 done
+border 1 done
+geo 0 done
+geo 1 done
+wrote results/jit_refine.csv

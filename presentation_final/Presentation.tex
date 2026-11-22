@@ -628,6 +628,12 @@ Periodic & every recharge\\[1mm]
 {\small The saving follows how much the UAVs wait: about 10\% with one UAV, 40 to 54\% with two, about 70\% with four. The mission time is unchanged in every case; with sampling and a budget filter it saves 46\% and is 0.8\,min faster.}
 \end{frame}
 
+\begin{frame}{6 \,Result 6 (cont. 3): Sampling and Just-in-Time Together}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_headline.png}\\[0.5mm]
+{\small 4 maps $\times$ 3 seeds, 2U-1G. Sampling the policy and keeping the fastest route within budget cuts time by 20\%; just-in-time departure removes 65\% of the energy; together \textbf{both gains add up and the budget is met} (0\% violations, 2\% with events). Re-checking the UGV's arrival at takeoff removes two thirds of the remaining hover energy (241 to 80\,kJ).}
+\end{frame}
+
 \begin{frame}{6 \,Result 7: The Same Holds for Other Team Sizes}
 \centering
 \includegraphics[width=0.97\linewidth]{assets/fig_teams.png}\\[0.5mm]
@@ -680,6 +686,34 @@ Periodic & every recharge\\[1mm]
 \begin{tikzpicture}\node[fgray, text width=12.5cm]{Interactive 3D replay: 18 scenarios on 3 maps; each setting shows the \textbf{best}, a \textbf{typical} and the \textbf{worst} case, plus failures.};\end{tikzpicture}
 \end{frame}
 
+\begin{frame}{6 \,Gazebo Test Bed: Replaying the Plans in Physics}
+\centering
+\begin{tikzpicture}[font=\scriptsize]
+  \node[fgray, text width=2.3cm] (a) at (0,0) {Planned mission (legs, drives, services)};
+  \node[fb,    text width=2.3cm] (b) at (3.1,0) {World: roads, tasks, events};
+  \node[fteal, text width=2.7cm] (c) at (6.3,0) {Wheeled UGV, flying UAV, lock-step replay};
+  \node[famber,text width=2.7cm] (d) at (9.7,0) {Compare: time, energy, UGV timing};
+  \foreach \x/\y in {a/b,b/c,c/d} \draw[ar] (\x)--(\y);
+\end{tikzpicture}\\[2mm]
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/flat_border_event.jpg}}\\[0.5mm]
+{\scriptsize Flat ground, border map}
+\end{column}
+\begin{column}{0.48\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/terrain_border_event.jpg}}\\[0.5mm]
+{\scriptsize Real terrain (open elevation data, 144\,m relief)}
+\end{column}
+\end{columns}
+{\scriptsize UGVs are wheeled vehicles with contact physics; a UAV is served only after the UGV has actually arrived.}
+\end{frame}
+
+\begin{frame}{6 \,Gazebo Confirms the Plans}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_gazebo.png}\\[0.5mm]
+{\small 12 replays (9 on flat ground, 3 on real terrain; border, paper and ring-road maps; open-loop and event-triggered). Mission time differs from the plan by at most 0.8\,min (0.13\% flat, 0.21\% terrain on average) and UAV energy by at most 0.5\%. The UGV reaches rendezvous 10 to 16\,s late on average, so the plans are physically achievable. It is a consistency check of the plans, not a test of the learned policy; 4 more border runs were not collected in time.}
+\end{frame}
+
 \begin{frame}{6 \,Did the Hypotheses Hold?}
 \centering\small
 \renewcommand{\arraystretch}{1.5}
@@ -709,7 +743,7 @@ M3 Dynamic roads, event replanning & \cmark & works on 4 maps; matches periodic 
 M4 Ablations, seeds, scaling & \cmark & 3 seeds, 4 maps, 4 team sizes, 45 and 75 tasks\\
 Gate: do road events matter (H3)? & \cmark & yes: up to $+29\%$ energy, early events worst\\
 Added: just-in-time, fallback, baselines & \cmark & $-18$ to $-69\%$ energy at no time cost; fallback; GLS, Tabu, SA compared\\
-Gazebo physics testbed & \xmark & not coupled; the 3D replay is a visual demo only\\
+Gazebo physics testbed & \pmark & plans replayed in Gazebo (wheeled UGV, real terrain); the policy itself is not run inside it\\
 \bottomrule
 \end{tabular}\\[3mm]
 {\scriptsize \cmark\ delivered \quad \pmark\ partly \quad \xmark\ not done}
@@ -719,11 +753,11 @@ Gazebo physics testbed & \xmark & not coupled; the 3D replay is a visual demo on
 \centering
 \begin{tikzpicture}[font=\scriptsize]
   \foreach \i/\l/\r in {
-    0/{4U-2G base policy 9 to 14\% slower than \cite{base}}/{Much longer training, larger models},
+    0/{4U-2G base policy 9 to 14\% slower than \cite{base}}/{More training did not help (211 to 210\,min); search does},
     1/{Energy methods and distillation: no gain}/{Checkpoint selection, landed-waiting studies},
     2/{Replans only at recharge boundaries}/{Mid-round replanning, fuel reserve},
     3/{Bad seed: fallback fixes failures, still slower}/{Pick the best of several seeds},
-    4/{No physics-based validation}/{Couple the plan to Gazebo~\cite{gazebo}}} {
+    4/{Gazebo replays plans; policy not in the loop}/{Run the policy and replanner inside Gazebo~\cite{gazebo}}} {
     \node[fred, text width=5.2cm] (l\i) at (0,-\i*1.0) {\l};
     \node[fteal, text width=5.0cm] (r\i) at (8.6,-\i*1.0) {\r};
     \draw[ar] (l\i) -- (r\i);}
@@ -738,11 +772,11 @@ Gazebo physics testbed & \xmark & not coupled; the 3D replay is a visual demo on
   \node[fgray, text width=2.0cm] (b) at (2.6,0)  {Gap in the literature};
   \node[fteal, text width=2.0cm] (c) at (5.2,0)  {Simulator, models, replanning};
   \node[fteal, text width=2.0cm] (d) at (7.8,0)  {4 maps $\times$ 3 seeds};
-  \node[fnavy, text width=3.6cm] (e) at (11.2,0) {Replanning and just-in-time departure pay off; learned energy-awareness does not};
+  \node[fnavy, text width=3.6cm] (e) at (11.2,0) {Replanning, just-in-time departure and sampling pay off; learned energy-awareness does not};
   \foreach \x/\y in {a/b,b/c,c/d,d/e} \draw[ar] (\x)--(\y);
 \end{tikzpicture}\\[7mm]
 \begin{block}{Take-away}
-Roads that change cost real time and energy: \textbf{event-triggered replanning} recovers them with few replans, and \textbf{just-in-time departure} removes more than half of the energy at no cost in time.
+Roads that change cost real time and energy: \textbf{event-triggered replanning} recovers them with few replans, \textbf{just-in-time departure} removes more than half of the energy at no cost in time, and together with \textbf{sampling and a budget filter} the mission is 20\% faster, uses 65\% less energy and meets the budget; Gazebo confirms the plans to within a fraction of a percent.
 \end{block}
 \centering {\Large Thank you. Questions and discussion.}
 \end{frame}
