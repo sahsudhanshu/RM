@@ -1,4 +1,19 @@
-# Runnable 3D Gazebo demo (no experiments)
+# Runnable 3D Gazebo demos (no experiments)
+
+Four ready-to-run demos of a planned UAV–UGV mission in **Gazebo Harmonic**, all started with one command (or the menu `./demos.sh`):
+
+| # | Demo | Command | What you see | Length |
+|---|---|---|---|---|
+| 1 | **Simple** | `./run_demo.sh` | one mission on the border map: 2 UAVs and 1 UGV; UAVs fly, land on the truck roof, charge while riding, take off again | about 3.5 min |
+| 2 | **Fallen tree** | `./run_tree_demo.sh` (or `border`) | a tree falls across the road, the road is blocked; orange = the route the open-loop plan was going to use, green = the replanned route; the truck takes the detour | about 4 min (ring road) |
+| 3 | **Team (multiple UGVs and UAVs)** | `./run_team_demo.sh` (or `2u2g`) | 4 UAVs + 2 UGVs on the ring road; a tree blocks the road and the whole team replans; a fleet camera keeps every truck in view | about 3 min |
+| 4 | **Diversion** (checkpoint to UGV, road blocked, replan) | `./run_divert_demo.sh` | a UAV visits checkpoints, flies back to the UGV, a tree blocks the UGV's road so it cannot reach the rendezvous; the team replans: the UAV diverts to a new rendezvous, the UGV takes another road; the open-loop plan would fail here | about 3 min |
+
+```bash
+./demos.sh            # menu: 1 simple, 2 tree, 3 team, 4 divert
+./demos.sh divert     # or: ./demos.sh simple | tree | team | divert   (extra options are passed on)
+```
+Every demo accepts the options below, e.g. `--terrain terrain/thar24` (real terrain), `--headless --record out.mp4 --max-sim 120` (no window, write a video), `--rtf 0.5` (slow motion).
 
 A ready-to-run 3D replay of a planned UAV–UGV mission in **Gazebo Harmonic**. Close-up 3D models, real-time playback, optional
 real-terrain world. It replays a plan exported from our simulator; it does not run the learned policy and it is not an experiment.
@@ -36,6 +51,24 @@ Options: `--speed N` time compression (default 60), `--scale N` space 1:N (defau
 The Gazebo window opens paused-looking until the first command; the mission starts automatically. When it finishes the world stays open; close the window to exit.
 
 In the Gazebo window: left-drag rotates, middle-drag pans, scroll zooms; or use `--follow ugv0` / `--follow uav0`.
+
+## Demo 3: team with multiple UGVs and UAVs
+```bash
+./run_team_demo.sh                       # 4 UAVs + 2 UGVs on the ring-road map, Gazebo window, fleet camera
+./run_team_demo.sh 2u2g                  # 2 UAVs + 2 UGVs (lighter)
+./run_team_demo.sh 4u2g --terrain terrain/thar24
+./run_team_demo.sh 4u2g --headless --record team.mp4 --max-sim 170
+```
+Two trucks (olive green and blue; they drive in separate lanes and do not collide with each other) serve the UAVs (each UAV has its own colour; one UAV is charged per truck at a time, the others wait). A tree falls across the ring road at about 107 s (72 s for 2U-2G); the orange line is the route the open-loop plan would have taken, the green line the replanned one. The fleet camera (`--cam fleet`) keeps every truck and nearby UAV in frame and cuts to the event. Plans: `plans/team-4u2g-*.json`, `plans/team-2u2g-*.json` (made by `../export_team_plans.py` from the trained 4U-2G and 2U-2G policies).
+
+## Demo 4: diversion (UAV flies from a checkpoint to the UGV, the road is blocked, the team replans)
+```bash
+./run_divert_demo.sh                       # border map, Gazebo window, fleet camera that cuts to the event
+./run_divert_demo.sh --terrain terrain/thar24
+./run_divert_demo.sh --headless --record divert.mp4 --max-sim 75     # video with battery bars
+```
+The story (border map, the "cut road" stress case): UAV 1 visits its checkpoints and flies back to the UGV rendezvous (it arrives with 31% battery); the road the UGV needs is blocked by a falling tree, so the UGV cannot reach it and the UAV hovers; the team **replans**: the UAV takes off again and **diverts to a new rendezvous** the UGV can reach (it lands with 3% battery), the UGV takes another road (green line), the UAV is recharged and the mission completes. The open-loop plan of the same case fails (the UGV cannot reach the rendezvous).
+The terminal narrates every step with plan times and **UAV battery levels**, and the recorded video shows battery bars: the battery follows the training environment (fuel F_a = 287.7 kJ, flight power 198.6 W at 10 m/s; hovering counts in the mission energy but not in the sortie battery) and a separate hover-energy counter.
 
 ## Fallen-tree scenario: a tree blocks the road, then the mission replans
 ```bash

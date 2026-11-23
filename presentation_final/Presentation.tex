@@ -418,6 +418,28 @@ Seeds and compute & 3 seeds per map (separate imitation and training runs); Kagg
 \end{tabular}
 \end{frame}
 
+\begin{frame}{5 \,Environment Parameters Used in Training}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.28}
+\begin{tabular}{@{}P{3.0cm}P{4.4cm}P{5.3cm}@{}}
+\toprule
+\textbf{Parameter} & \textbf{Base paper~\cite{base}} & \textbf{This work}\\
+\midrule
+Workspace & $20$ km $\times$ $20$ km & same; aerial tasks sampled within 7\,km of the depot\\
+UAV speed $v_a$ & 10 m/s & same\\
+UGV speed $v_g$ & 4.5 m/s (roads only) & same; divided by $\kappa$ on slow roads, blocked roads removed\\
+UAV fuel $F_a$ & 287.7 kJ & same (about 24 min, 14.5\,km at 10\,m/s)\\
+Power model & $P(v)=0.0461v^3-0.5834v^2-1.8761v+229.6$\,W & same: 198.6\,W cruising, 229.6\,W hovering (waiting in the air)\\
+Recharge time $T_R$ & constant per rendezvous & 15 min (900\,s), confirmed in the authors' code~\cite{code}\\
+Failure penalty $\mathbb{P}$ & 800 & 800 min added to the mission time\\
+Problem sizes & U15G5, U45G15 (+U60G20, U75G25) & trained on U15G5; U45G15 and U75G25 zero-shot\\
+Teams & 1U-1G, 2U-1G, 2U-2G, 4U-2G & the same four (2U-1G is the main one)\\
+\midrule
+\textbf{Added by us} & & road events (18 types), budget $B=\beta B_0$, rendezvous masks with a 30\,min wait limit, replan if a UAV waits 5\,min longer\\
+\bottomrule
+\end{tabular}
+\end{frame}
+
 \begin{frame}{5 \,Training Curves (Ring Road, 2U-1G, 3 Seeds)}
 \centering
 \includegraphics[width=0.97\linewidth]{assets/fig_training.png}\\[0.5mm]

@@ -25,21 +25,26 @@ def terrain_fn(t):
     return f
 
 
-def ugv_sdf(name, x, y, z, yaw):
+UGV_TINTS = [("0.28 0.33 0.22 1", "0.20 0.24 0.17 1"), ("0.18 0.30 0.48 1", "0.13 0.22 0.36 1"), ("0.50 0.30 0.16 1", "0.38 0.22 0.12 1")]   # body, cab per UGV id
+
+
+def ugv_sdf(name, x, y, z, yaw, tint=0):
+    body_c, cab_c = UGV_TINTS[tint % len(UGV_TINTS)]
+    cb = f'<contact><collide_bitmask>0x{1 << (tint % 16):04x}</collide_bitmask></contact>'      # one bit per truck: trucks of the same team do not collide with each other, all collide with the ground (default mask)
     wheel = lambda n, ys: (f'<link name="{n}"><pose relative_to="chassis">0 {ys} -0.05 -1.5707 0 0</pose>{inertia(8, 0.6, 0.6, 0.6)}'
                            f'<visual name="v"><geometry><cylinder><radius>0.7</radius><length>0.5</length></cylinder></geometry>{mat("0.08 0.08 0.08 1")}</visual>'
-                           f'<collision name="c"><geometry><cylinder><radius>0.7</radius><length>0.5</length></cylinder></geometry><surface><friction><ode><mu>1.4</mu><mu2>1.4</mu2></ode></friction></surface></collision></link>')
+                           f'<collision name="c"><geometry><cylinder><radius>0.7</radius><length>0.5</length></cylinder></geometry><surface>{cb}<friction><ode><mu>1.4</mu><mu2>1.4</mu2></ode></friction></surface></collision></link>')
     joint = lambda n, c: f'<joint name="{n}" type="revolute"><parent>chassis</parent><child>{c}</child><axis><xyz expressed_in="__model__">0 1 0</xyz><limit><lower>-1e16</lower><upper>1e16</upper></limit></axis></joint>'
     caster = lambda n, xs: (f'<link name="{n}"><pose relative_to="chassis">{xs} 0 -0.40 0 0 0</pose>{inertia(2, 0.05, 0.05, 0.05)}'
-                            f'<collision name="c"><geometry><sphere><radius>0.35</radius></sphere></geometry><surface><friction><ode><mu>0</mu><mu2>0</mu2></ode></friction></surface></collision></link>')
-    vis = (box("body", "5.2 2.4 0.8", "0 0 0 0 0 0", COL["ugv"]) + box("cab", "1.9 2.2 0.9", "1.5 0 0.85 0 0 0", COL["cab"])
-           + box("window", "0.1 1.8 0.5", "2.47 0 0.95 0 0 0", "0.55 0.75 0.85 1") + box("bed", "2.6 2.2 0.15", "-0.9 0 0.48 0 0 0", COL["cab"])
+                            f'<collision name="c"><geometry><sphere><radius>0.35</radius></sphere></geometry><surface>{cb}<friction><ode><mu>0</mu><mu2>0</mu2></ode></friction></surface></collision></link>')
+    vis = (box("body", "5.2 2.4 0.8", "0 0 0 0 0 0", body_c) + box("cab", "1.9 2.2 0.9", "1.5 0 0.85 0 0 0", cab_c)
+           + box("window", "0.1 1.8 0.5", "2.47 0 0.95 0 0 0", "0.55 0.75 0.85 1") + box("bed", "2.6 2.2 0.15", "-0.9 0 0.48 0 0 0", cab_c)
            + box("pad", "2.6 2.2 0.08", "-0.9 0 0.58 0 0 0", COL["pad"]) + box("H1", "0.2 1.2 0.02", "-1.6 0 0.63 0 0 0", "0.1 0.1 0.1 1")
            + box("H2", "0.2 1.2 0.02", "-0.2 0 0.63 0 0 0", "0.1 0.1 0.1 1") + box("H3", "1.4 0.2 0.02", "-0.9 0 0.63 0 0 0", "0.1 0.1 0.1 1")
            + cyl("mast", 0.06, 1.6, "2.0 0.8 1.9 0 0 0", "0.1 0.1 0.1 1") + sph("beacon", 0.18, "2.0 0.8 2.75 0 0 0", "0.95 0.2 0.1 1")
            + "".join(cyl(f"w{i}", 0.7, 0.5, f"{xs} {ys} -0.05 -1.5707 0 0", "0.08 0.08 0.08 1") for i, (xs, ys) in enumerate([(1.9, 1.3), (1.9, -1.3), (-1.9, 1.3), (-1.9, -1.3)])))
     return (f'<model name="{name}"><pose>{x:.2f} {y:.2f} {z:.2f} 0 0 {yaw:.4f}</pose>'
-            f'<link name="chassis">{inertia(600, 320, 1382, 1638)}{vis}<collision name="body"><geometry><box><size>5.2 2.4 0.8</size></box></geometry></collision></link>'
+            f'<link name="chassis">{inertia(600, 320, 1382, 1638)}{vis}<collision name="body"><geometry><box><size>5.2 2.4 0.8</size></box></geometry><surface>{cb}</surface></collision></link>'
             f'{wheel("left_wheel", 1.3)}{wheel("right_wheel", -1.3)}{caster("caster_f", 2.0)}{caster("caster_r", -2.0)}'
             f'{joint("left_wheel_joint", "left_wheel")}{joint("right_wheel_joint", "right_wheel")}'
             f'<joint name="cf" type="fixed"><parent>chassis</parent><child>caster_f</child></joint><joint name="cr" type="fixed"><parent>chassis</parent><child>caster_r</child></joint>'
@@ -132,7 +137,7 @@ def world_sdf(plan, terrain=None, record_cam=None, cam_res=(1280, 720), trees=()
         d = g["drives"]; yaw = 0.0
         if d:
             a, b = xy[d[0]["a"]], xy[d[0]["b"]]; yaw = math.atan2(b[1] - a[1], b[0] - a[0])
-        vehicles.append(ugv_sdf(f"ugv{g['id']}", g["start"][0], g["start"][1], gz(*g["start"]) + UGV_Z + 0.25, yaw))
+        vehicles.append(ugv_sdf(f"ugv{g['id']}", g["start"][0], g["start"][1], gz(*g["start"]) + UGV_Z + 0.25, yaw, tint=g["id"]))
     for u in plan["uavs"]:
         vehicles.append(uav_sdf(f"uav{u['id']}", u["start"][0], u["start"][1], gz(*u["start"]) + UAV_REST + 0.2, COL["uav"][u["id"] % 4]))
     xs = [p[0] for p in xy] + [p[0] for p in plan["tasks"]["xy"]]; ys = [p[1] for p in xy] + [p[1] for p in plan["tasks"]["xy"]]

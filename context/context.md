@@ -222,18 +222,18 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 ### Deliverables
 | What | Where |
 |---|---|
-| **Final deck, 28 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
+| **Final deck, 29 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
 | Full 44-slide deck (backup, has the removed slides) | `presentation_final/Presentation_full_44slides.pdf`, `body_full_44slides.tex` |
 | **Presentation script** (3 speakers, per-slide teaching, demos, Q&A) | `context/presentation_script.md` |
 | 3D browser viewer (18 scenarios, open-loop vs replanning) and its **recorded videos** | `implementation/viewer/index_offline.html` (works offline); videos `implementation/viewer/videos/*.mp4` (made by `record_viewer.py`); notes `implementation/viewer/DEMO.md` |
 | Gazebo experiment replays (22 runs) and results | `implementation/gazebo/` (`gazebo_vs_plan.csv`, `results*/`, videos in `videos/` and `videos_terrain/`, git-ignored) |
-| **Runnable 3D Gazebo demo** (no experiments), incl. the **fallen-tree scenario** (`./run_tree_demo.sh`: tree falls, orange old route, green replanned route) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
+| **Four runnable 3D Gazebo demos** (menu `demos.sh`): simple (`run_demo.sh`), **fallen tree** (`run_tree_demo.sh`), **team with 4 UAVs + 2 UGVs** (`run_team_demo.sh`), **diversion** (`run_divert_demo.sh`: UAV flies from a checkpoint to the UGV, road blocked by a tree, team replans; UAV battery bars) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
 | Code, tests (35), results, README | `implementation/` (`README.md` documents every experiment) |
 
 Repository: GitHub `sahsudhanshu/RM` (branch `main`). Not in the repo (size or reproducible): `.venv`, `presentation_final/.texlocal` (local TeX, 230 MB), `*.pt` checkpoints, raw per-instance Kaggle tables, Gazebo videos/run folders.
 
-### Story of the deck (28 slides)
-Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-17: reproduce base, event-triggered replanning, learning policies, **training setup and configuration (15)**, **training curves (16)**, experimental design) -> results (18-23) -> Gazebo (24) -> hypotheses (25) -> conclusion and limits (26) -> future plan with a success test per hypothesis (27) -> references (28).
+### Story of the deck (29 slides)
+Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-18: reproduce base, event-triggered replanning, learning policies, **training setup and configuration (15)**, **environment parameters used in training (16)**, **training curves (17)**, experimental design) -> results (19-24) -> Gazebo (25) -> hypotheses (26) -> conclusion and limits (27) -> future plan with a success test per hypothesis (28) -> references (29).
 
 ### Key results (all with the numbers used in the deck)
 * Road events hurt: up to +22 % time and +29 % energy (border map, open-loop rule policy, 18 events).
@@ -262,3 +262,9 @@ Transformer encoder (3 layers, 8 heads, d = 128, LayerNorm) + glimpse-attention 
 * **Sampling + budget filter (P1):** at decision time sample N = 64 routes from the trained policy, simulate each, keep the fastest route with E <= B (else the lowest-energy route). No extra training. About -20% mission time.
 * **JIT (just-in-time departure):** a UAV that expects to wait for the UGV delays take-off and waits on the ground (free) instead of hovering; it arrives as the UGV arrives, so mission time is unchanged and hover energy disappears (about -65% UAV energy). Assumes free ground waiting and a predictable UGV arrival.
 * **Combined (4 maps x 3 seeds, 2U-1G, static roads):** base 228 min / 4.4 MJ / 78% over budget -> both 182 min / 1.5 MJ / 0% over budget.
+
+### Environment parameters (slide 16; `implementation/src/edr/params.py`)
+Workspace 20 x 20 km (aerial tasks within 7 km of the depot); UAV 10 m/s; UGV 4.5 m/s on roads only (divided by kappa on slow roads, blocked roads removed); UAV fuel F_a = 287.7 kJ (about 24 min, 14.5 km); power P(v) = 0.0461 v^3 - 0.5834 v^2 - 1.8761 v + 229.6 W (198.6 W cruise, 229.6 W hover); recharge T_R = 15 min (900 s, confirmed from the authors' code); failure penalty 800 min; trained on U15G5, zero-shot U45G15 and U75G25; teams 1U-1G, 2U-1G, 2U-2G, 4U-2G. Ours: 18 road events, budget B = beta B0, rendezvous mask with a 30 min wait limit, replan if a UAV waits 5 min longer. In the environment hovering counts in the mission energy E but not in the per-sortie battery F_a.
+
+### Gazebo demo 4 (diversion) and the team demo
+Border-map "cut road" case: UAV 1 visits checkpoints, flies back to the UGV (arrives with 31% battery), a tree blocks the UGV's road, the UAV hovers, the team replans, the UAV diverts to a new rendezvous (lands with 3%), the open-loop plan of the same case fails. Team demo: 4 UAVs + 2 UGVs on the ring road, tree blocks the road, team replans (open-loop 272 min vs replanned 166 min); trucks drive in separate lanes and do not collide with each other (without this the two trucks jammed at the depot).

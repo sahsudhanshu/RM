@@ -35,7 +35,7 @@ ap.add_argument("--terrain", default="", help="folder with heightmap.png, diffus
 ap.add_argument("--vex", type=float, default=1.4, help="vertical exaggeration of the terrain")
 ap.add_argument("--headless", action="store_true", help="no window (server only)"); ap.add_argument("--record", default="", help="headless: write an MP4 of an oblique camera")
 ap.add_argument("--max-sim", type=float, default=0.0, help="stop after this many demo seconds"); ap.add_argument("--follow", default="", help="GUI: follow a vehicle, e.g. ugv0")
-ap.add_argument("--cam", default="follow", choices=["follow", "overview"], help="recording camera: follow the first UGV or a fixed overview")
+ap.add_argument("--cam", default="follow", choices=["follow", "overview", "fleet"], help="camera: follow the first UGV, a fixed overview, or a fleet camera that keeps all UGVs (and nearby UAVs) in frame")
 ap.add_argument("--event-style", default="auto", choices=["auto", "tree", "strip"], help="blocked road: a tree falls across it (auto for block events) or a red strip with cones")
 ap.add_argument("--compare", default="", help="open-loop plan of the same case: its remaining UGV route is drawn in orange before the event")
 ap.add_argument("--show-event", action="store_true", help="cut the camera to the road event and the replanned route")
@@ -53,9 +53,9 @@ def scale_plan(P):
     return dict(id=P["id"], title=P["title"], mode=P["mode"], roads=dict(xy=[sc(p) for p in P["roads"]["xy"]], edges=P["roads"]["edges"]),
                 tasks=dict(xy=[sc(p) for p in P["tasks"]["xy"]], n_ground=P["tasks"]["n_ground"], depot=sc(P["tasks"]["depot"])),
                 ugvs=[dict(id=g["id"], start=sc(g["start"]), drives=[dict(t0=d["t0"] / C, t1=d["t1"] / C, a=d["a"], b=d["b"]) for d in g["drives"]]) for g in P["ugvs"]],
-                uavs=[dict(id=u["id"], start=sc(u["start"]), legs=[dict(t0=l["t0"] / C, t1=l["t1"] / C, p0=sc(l["p0"]), p1=sc(l["p1"]), land=l["land"]) for l in u["legs"]]) for u in P["uavs"]],
+                uavs=[dict(id=u["id"], start=sc(u["start"]), legs=[dict(t0=l["t0"] / C, t1=l["t1"] / C, p0=sc(l["p0"]), p1=sc(l["p1"]), land=l["land"], E=l.get("E", 0.0)) for l in u["legs"]]) for u in P["uavs"]],
                 services=[dict(uav=s["uav"], ugv=s["ugv"], touchdown=s["touchdown"] / C, start=s["start"] / C, end=s["end"] / C, node=s["node"]) for s in P["services"]],
-                event=dict(t=P["event"]["t"] / C, kind=P["event"]["kind"], edges=P["event"]["edges"]), T=P["T"] / C)
+                event=dict(t=P["event"]["t"] / C, kind=P["event"]["kind"], edges=P["event"]["edges"]), T=P["T"] / C, fuel=P.get("fuel", 287.7), hover_kj_s=P.get("hover_kj_per_s", 0.2296) )
 plan = scale_plan(P)
 cmp_plan = scale_plan(json.load(open(a.compare))) if a.compare else None
 terrain = None
@@ -81,6 +81,14 @@ if tree_style:
         L = math.hypot(q[0] - p[0], q[1] - p[1]); ux, uy = (q[0] - p[0]) / L, (q[1] - p[1]) / L; nx, ny = -uy, ux; mx, my = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
         bx, by = mx + nx * (ROAD_W / 2 + 3.5), my + ny * (ROAD_W / 2 + 3.5); yaw = math.atan2(-ny, -nx)
         trees.append((f"tree{i}", bx, by, gzh(bx, by), yaw)); tree_info.append(dict(name=f"tree{i}", x=bx, y=by, z=gzh(bx, by), yaw=yaw, mid=(mx, my), u=(ux, uy), p=p, q=q))
+LANE_W = 2.8                                                    # trucks of one team drive in separate lanes (and spawn in them) so they never overlap
+lane = {g["id"]: (i - (len(plan["ugvs"]) - 1) / 2) * LANE_W for i, g in enumerate(plan["ugvs"])} if len(plan["ugvs"]) > 1 else {g["id"]: 0.0 for g in plan["ugvs"]}
+for g in plan["ugvs"]:
+    if g["drives"]:
+        A_, B_ = xy[g["drives"][0]["a"]], xy[g["drives"][0]["b"]]; L_ = math.hypot(B_[0] - A_[0], B_[1] - A_[1]) or 1.0
+        g["start"] = [g["start"][0] - (B_[1] - A_[1]) / L_ * lane[g["id"]], g["start"][1] + (B_[0] - A_[0]) / L_ * lane[g["id"]]]
+for i_, u_ in enumerate(plan["uavs"]):
+    u_["start"] = [u_["start"][0] + 3.5 * (i_ - (len(plan["uavs"]) - 1) / 2), u_["start"][1] - 3.0]      # spread the UAVs on the depot pad
 open(world_path, "w").write(world_sdf(plan, terrain, record_cam=cam if a.record else None, trees=trees))
 if a.dry_run:
     import xml.dom.minidom as _md
@@ -124,21 +132,33 @@ while not (all(f"ugv{g['id']}" in poses for g in plan["ugvs"]) and all(f"uav{u['
     time.sleep(0.5)
 time.sleep(1.0)
 
-def set_gui_camera(pose=None, follow=None):
+def set_gui_camera(pose=None, follow=None, quiet=False):
     from gz.msgs10.gui_camera_pb2 import GUICamera
     x, y, z, pitch, yaw = pose or cam
     g = GUICamera(); g.name = "gzclient_camera"; g.pose.position.x, g.pose.position.y, g.pose.position.z = x, y, z
     cp, sp_, cy_, sy_ = math.cos(pitch / 2), math.sin(pitch / 2), math.cos(yaw / 2), math.sin(yaw / 2)
     g.pose.orientation.w, g.pose.orientation.x, g.pose.orientation.y, g.pose.orientation.z = cp * cy_, -sp_ * sy_, sp_ * cy_, cp * sy_
-    for _ in range(40):
+    for _ in range(1 if quiet else 40):
         ok = node.request("/gui/move_to/pose", g, GUICamera, Boolean, 1000)
         if ok[0] and ok[1].data: break
         time.sleep(1.0)
-    print("  gui camera move:", "ok" if (ok[0] and ok[1].data) else "failed", flush=True)
+    if not quiet: print("  gui camera move:", "ok" if (ok[0] and ok[1].data) else "failed", flush=True)
     fol = a.follow if follow is None else follow
     if fol or follow == "":
         from gz.msgs10.stringmsg_pb2 import StringMsg
         s = StringMsg(); s.data = fol; node.request("/gui/follow", s, StringMsg, Boolean, 1000)
+fleet_state = {}
+def fleet_pose(smooth=0.05):
+    """Camera pose that keeps every UGV (and the UAVs within 150 m of them) in frame; looks north from the south side."""
+    ug = [(poses[f"ugv{g['id']}"][0], poses[f"ugv{g['id']}"][1]) for g in plan["ugvs"]]
+    cx_, cy_ = sum(p[0] for p in ug) / len(ug), sum(p[1] for p in ug) / len(ug)
+    pts = ug + [(poses[f"uav{u['id']}"][0], poses[f"uav{u['id']}"][1]) for u in plan["uavs"] if math.hypot(poses[f"uav{u['id']}"][0] - cx_, poses[f"uav{u['id']}"][1] - cy_) < 150]
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    mx, my = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2; spread = min(160.0, max(max(xs) - min(xs), max(ys) - min(ys), 36.0))
+    dd, hh = 0.9 * spread + 28, 0.5 * spread + 16
+    tgt = [mx, my - dd, gzh(mx, my) + hh, math.atan2(hh, dd)]; st = fleet_state.get("p")
+    fleet_state["p"] = tgt if st is None else [s_ + smooth * (g_ - s_) for s_, g_ in zip(st, tgt)]
+    x, y, z, p = fleet_state["p"]; return (x, y, z, p, math.pi / 2)
 if not a.headless: set_gui_camera()
 
 # ---- controllers ------------------------------------------------------------------------------------------------------------
@@ -152,7 +172,16 @@ for s in plan["services"]:
             for k, l in enumerate(u["legs"]):
                 if l["land"] and abs(l["t1"] - s["touchdown"]) < 1.0 / C * 60: sv_by_leg[(u["id"], k)] = s
 queue = {g: sorted([s for s in plan["services"] if s["ugv"] == g], key=lambda s: s["start"]) for g in ugvs}; qpos = {g: 0 for g in ugvs}
-uavs = {u["id"]: dict(legs=u["legs"], k=0, mode="wait", gate=0.0, ride=None, done_at=0.0) for u in plan["uavs"]}
+uavs = {u["id"]: dict(legs=u["legs"], k=0, mode="wait", gate=0.0, ride=None, done_at=0.0, fuel=plan["fuel"], hover=0.0, told=set()) for u in plan["uavs"]}
+HOV_PER_DEMO_S = plan["hover_kj_s"] * C            # kJ burnt per demo second while a UAV waits (hover power x time compression)
+def pm_now(t): return t * C / 60.0
+def say(t, msg): print(f"  [plan {pm_now(t):5.0f} min] {msg}", flush=True)
+def battery_pct(uid):
+    st = uavs[uid]; f = st["fuel"]
+    if st["mode"] == "fly":
+        l = st["legs"][st["k"]]; px, py = poses[f"uav{uid}"][0], poses[f"uav{uid}"][1]
+        tot = max(math.hypot(l["p1"][0] - l["p0"][0], l["p1"][1] - l["p0"][1]), 1e-6); f -= l["E"] * min(1.0, max(0.0, 1.0 - math.hypot(l["p1"][0] - px, l["p1"][1] - py) / tot))
+    return max(0.0, 100.0 * f / plan["fuel"])
 def ugv_dep(s):
     best = None
     for i, d in enumerate(ugvs[s["ugv"]]["drives"]):
@@ -172,6 +201,7 @@ def ugv_tick(g, st, t):
         if st["idx"] < len(st["drives"]) and t >= max(st["drives"][st["idx"]]["t0"], st["free_at"]): st["mode"] = "drive"
         else: vel(n, 0, 0, 0, 0); return
     d = st["drives"][st["idx"]]; A, B = np.array(xy[d["a"]]), np.array(xy[d["b"]]); L = float(np.linalg.norm(B - A))
+    nrm = np.array([-(B[1] - A[1]), B[0] - A[0]]) / max(L, 1e-6); A, B = A + nrm * lane[g], B + nrm * lane[g]          # lane offset (left of the direction of travel)
     v_plan = L / max(d["t1"] - d["t0"], 0.05); u = (B - A) / L; s = float((np.array([px, py]) - A) @ u); remain = L - s
     if remain < 1.5:
         vel(n, 0, 0, 0, 0); st["arr"][st["idx"]] = t; st["free_at"] = t; st["idx"] += 1; st["mode"] = "idle"; return
@@ -182,15 +212,20 @@ def uav_tick(uid, st, t):
     if st["mode"] == "charge":
         g = st["ride"]; ux, uy, uz, uyaw = poses[f"ugv{g}"]
         set_pose(n, ux - 0.9 * math.cos(uyaw), uy - 0.9 * math.sin(uyaw), uz + 0.62 + 0.55, uyaw)
-        if t >= st["svc_end"]: st["gate"] = st["svc_end"]; st["k"] += 1; st["mode"] = "wait"
+        if t >= st["svc_end"]: st["gate"] = st["svc_end"]; st["k"] += 1; st["mode"] = "wait"; st["fuel"] = plan["fuel"]; say(t, f"UAV {uid} is fully charged (100%) and ready to take off")
         return
     if st["mode"] == "wait":
         if st["k"] >= len(legs): st["mode"] = "done"; st["done_at"] = t; vel(n, 0, 0, 0); return
         l = legs[st["k"]]
         if st["ride"] is not None:                       # sitting on a UGV: keep following it until take-off
             g = st["ride"]; ux, uy, uz, uyaw = poses[f"ugv{g}"]; set_pose(n, ux - 0.9 * math.cos(uyaw), uy - 0.9 * math.sin(uyaw), uz + 0.62 + 0.55, uyaw)
-        if t < max(l["t0"], st["gate"]): vel(n, 0, 0, 0); return
+        if t < max(l["t0"], st["gate"]):
+            vel(n, 0, 0, 0)
+            if st["ride"] is None and st["k"] > 0: st["hover"] += HOV_PER_DEMO_S * dt          # waiting in the air: counts in the mission energy E, not in the sortie battery F_a (as in training)
+            return
         st["ride"] = None; st["mode"] = "fly"
+        if st.get("diverted") and ("div", st["k"]) not in st["told"]: st["told"].add(("div", st["k"])); say(t, f"REPLANNED: UAV {uid} takes off again and diverts to a new rendezvous the UGV can reach (battery {battery_pct(uid):.0f}%)")
+        elif l["land"] and ("go", st["k"]) not in st["told"]: st["told"].add(("go", st["k"])); say(t, f"UAV {uid} leaves its last checkpoint and flies to the UGV rendezvous (battery {battery_pct(uid):.0f}%)")
     if st["mode"] == "fly":
         l = legs[st["k"]]; dx, dy = l["p1"][0] - px, l["p1"][1] - py; dist = math.hypot(dx, dy)
         v = math.hypot(l["p1"][0] - l["p0"][0], l["p1"][1] - l["p0"][1]) / max(l["t1"] - l["t0"], 0.05)
@@ -199,19 +234,25 @@ def uav_tick(uid, st, t):
         vz = max(-4.0, min(4.0, 1.4 * (zt - pz)))
         if dist <= max(v * dt, 0.8):
             vel(n, 0, 0, vz)
-            if l["land"]: st["mode"] = "landed"; st["arr"] = t
+            st["fuel"] -= l["E"]
+            if l["land"]: st["mode"] = "landed"; st["arr"] = t; say(t, f"UAV {uid} reaches the rendezvous (battery {max(0.0, 100 * st['fuel'] / plan['fuel']):.0f}%)")
             else: mark_done(l["p1"]); st["k"] += 1; st["mode"] = "wait"
             return
         vel(n, v * dx / dist, v * dy / dist, vz); return
     if st["mode"] == "landed":
         s = sv_by_leg.get((uid, st["k"]))
-        if s is None: st["k"] += 1; st["mode"] = "wait"; return
+        if s is None:
+            st["k"] += 1; st["mode"] = "wait"; st["diverted"] = True
+            say(t, f"UAV {uid}: the UGV cannot reach this rendezvous (road blocked) - the UAV hovers and waits for the new plan")
+            return
         g = s["ugv"]; q = queue[g]
+        st["hover"] += HOV_PER_DEMO_S * dt                                                  # waiting for the UGV (hover power; mission energy only)
         vel(n, 0, 0, max(-3.0, min(3.0, 1.5 * ((gzh(px, py) + 3.0) - pz))))
         if qpos[g] < len(q) and q[qpos[g]] is s:
             dep = ugv_dep(s); ready = dep is None or ugvs[g]["arr"][dep] is not None
             if ready and t >= ugvs[g].get("free_at_svc", 0.0):
                 st["svc_end"] = t + (s["end"] - s["start"]); st["mode"] = "charge"; st["ride"] = g; ugvs[g]["free_at_svc"] = st["svc_end"]; qpos[g] += 1
+                st["diverted"] = False; say(t, f"UAV {uid} lands on UGV {g} and charges (battery {max(0.0, 100 * st['fuel'] / plan['fuel']):.0f}%, recharge {(s['end'] - s['start']) * C / 60:.0f} min)")
         return
 ev_state = dict(old=False, fall=False, barrier=False, new=False, cut=False, back=False)
 def route_segments(pl, t_from):
@@ -264,8 +305,8 @@ ff = None
 if a.record:
     ff = subprocess.Popen(["ffmpeg", "-y", "-loglevel", "error", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", "1280x720", "-r", "15", "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-crf", "22", a.record], stdin=subprocess.PIPE)
     from PIL import Image as PILImage, ImageDraw, ImageFont
-    try: FONT = ImageFont.truetype("/usr/share/fonts/truetype/lato/Lato-Medium.ttf", 26)
-    except Exception: FONT = ImageFont.load_default()
+    try: FS = ImageFont.truetype("/usr/share/fonts/truetype/lato/Lato-Medium.ttf", 17); FONT = ImageFont.truetype("/usr/share/fonts/truetype/lato/Lato-Medium.ttf", 26)
+    except Exception: FONT = FS = ImageFont.load_default()
 
 # ---- run ------------------------------------------------------------------------------------------------------------------------
 horizon = a.max_sim or (plan["T"] * 1.4 + 30); t = 0.0; t_wall0 = time.time(); last = -1
@@ -277,6 +318,10 @@ try:
         for g, st in ugvs.items(): ugv_tick(g, st, t)
         if a.record and cut_active:
             vx, vy, vz, vp, vyaw = event_view(); set_pose("rec_cam", vx, vy, vz, vyaw, vp)
+        elif a.record and a.cam == "fleet":
+            fx, fy, fz, fp, fyaw = fleet_pose(); set_pose("rec_cam", fx, fy, fz, fyaw, fp)
+        elif (not a.headless) and a.cam == "fleet" and int(round(t / dt)) % 36 == 0 and not cut_active:
+            set_gui_camera(fleet_pose(0.6), follow="", quiet=True)
         elif a.record and a.cam == "follow":
             fx, fy, fz, fyaw = poses[f"ugv{plan['ugvs'][0]['id']}"]; set_pose("rec_cam", fx - 24 * math.cos(fyaw), fy - 24 * math.sin(fyaw), fz + 12, fyaw, 0.42)
         for uid, st in uavs.items(): uav_tick(uid, st, t)
@@ -293,9 +338,13 @@ try:
             if ff:
                 im = PILImage.frombytes("RGB", (1280, 720), b); d = ImageDraw.Draw(im); pm = t * C / 60
                 d.rectangle([0, 0, 1280, 44], fill=(255, 255, 255)); d.text((14, 8), f"{plan['title']} | {plan['mode']}", fill=(20, 40, 70), font=FONT); d.text((1010, 8), f"plan time {int(pm // 60)}:{int(pm % 60):02d} h", fill=(20, 40, 70), font=FONT)
+                for k_, (uid_, st_) in enumerate(uavs.items()):
+                    pct = battery_pct(uid_); col = {0: (26, 102, 230), 1: (217, 51, 153), 2: (26, 191, 204), 3: (242, 128, 26)}[uid_ % 4]; y0 = 54 + 22 * k_
+                    d.rectangle([10, y0, 270, y0 + 18], fill=(255, 255, 255), outline=(120, 130, 140)); d.rectangle([12, y0 + 2, 12 + int(2.54 * pct), y0 + 16], fill=(217, 64, 38) if pct < 20 else col)
+                    d.rectangle([274, y0, 530, y0 + 18], fill=(20, 40, 70)); d.text((280, y0 - 1), f"UAV {uid_}  battery {pct:3.0f}%  hover {st_['hover']:4.0f} kJ", fill=(255, 255, 255), font=FS)
                 ff.stdin.write(im.tobytes())
         if int(t) != last and int(t) % 10 == 0:
-            last = int(t); print(f"  demo {t:5.0f} s  (plan {t * C / 60:5.0f} min)  UAV {[s['mode'] for s in uavs.values()]}  UGV {[(s['mode'], s['idx']) for s in ugvs.values()]}", flush=True)
+            last = int(t); print(f"  demo {t:5.0f} s  (plan {t * C / 60:5.0f} min)  UAV {[(s['mode'], round(battery_pct(u)), round(s['hover'])) for u, s in uavs.items()]} (mode, battery %, hover kJ)  UGV {[(s['mode'], s['idx']) for s in ugvs.values()]}", flush=True)
         if all(s["mode"] == "done" for s in uavs.values()) and all(s["idx"] >= len(s["drives"]) for s in ugvs.values()):
             print(f"mission complete after {t:.0f} demo seconds (plan time {t * C / 60:.0f} min)", flush=True); break
     if not a.headless and server.poll() is None and not a.max_sim:
