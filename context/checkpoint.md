@@ -1,18 +1,16 @@
-# Checkpoint (2026-11-23 ~00:50 IST) — deadline 5:00 am the same day
+# Checkpoint (2026-11-23, final)
 
 ## State
-- GitHub `sahsudhanshu/RM` main = `152b92d` (deck 44 slides, code, results, notes). Local repo may be ahead by this checkpoint commit.
-- Deck: `presentation_final/Presentation.pdf` (+ `Presentation_overleaf.zip`). Rebuild: `cd presentation_final && TEXMFHOME=$PWD/.texlocal/usr/share/texlive/texmf-dist python3 build.py` (needs `.texlocal`, not in git; figures: `python3 make_figs.py`).
-- Done: P1 + JIT across 4 maps x 3 seeds, JIT re-prediction, adaptive sampling (neutral), 10240-sample decoding, fallback, 4U-2G more training (no gain), Gazebo test bed (flat + real terrain), 12 Gazebo replays collected (`implementation/gazebo/gazebo_vs_plan.csv`).
+- Everything is committed and pushed to GitHub `sahsudhanshu/RM` (main). The only later additions are this note, `presentation_script.md` and the context updates (commit them if not yet pushed: `git status`).
+- Deck: 25 slides (`presentation_final/Presentation.pdf`, `Presentation_overleaf.zip`); the full 44-slide version is kept as `Presentation_full_44slides.pdf`.
+- Script for the three speakers, demos and Q&A: `context/presentation_script.md`.
+- Gazebo: 22 experiment replays done (`implementation/gazebo/gazebo_vs_plan.csv`); runnable 3D demo packaged (`implementation/gazebo/gazebo_demo.zip`, tested on the friend's Ubuntu laptop in headless mode, in the Gazebo window inside a virtual display and from a clean unzip).
+- Full state, key numbers, limits and rebuild commands: `context/context.md` section 10.
 
-## Gazebo runs COMPLETE (2026-11-23 ~04:50)
-- All 22 replays done and collected (`implementation/gazebo/gazebo_vs_plan.csv`); deck and READMEs updated. Run with `GZ_IP=127.0.0.1` if the network can change.
+## Before presenting
+1. Open `implementation/viewer/index_offline.html` in a browser and press Play once.
+2. Copy `implementation/gazebo/demo_preview_*.mp4` and the two replay videos named in `presentation_script.md` to the presenting laptop (videos are not in git).
+3. Read `presentation_script.md` sections 0, 1 and your own part.
 
-## Remaining (optional)
-1. `cd implementation/gazebo && ./collect.sh && python3 analyze.py` (collect.sh already has the new IP).
-2. Update the Gazebo slide sentence in `presentation_final/body.tex` (12 -> final n, numbers from analyze.py; remove "4 more border runs were not collected") and `implementation/gazebo/README.md` results table.
-3. `cd presentation_final && python3 make_figs.py && TEXMFHOME=... python3 build.py`, re-zip Overleaf, commit, `git push` (retry on "hung up"; `http.postBuffer` is already set).
-4. Copy for the demo: `implementation/viewer/index_offline.html` and `implementation/gazebo/videos*/` (videos are git-ignored).
-
-## Not done / stated limits
-Policy not run inside Gazebo; no JIT mode in the 3D viewer; 4U-2G gap not closed by training (search closes it); candidates A/B no better than control; terrain from open SRTM-derived data, not Google Earth.
+## Open (nothing blocks the presentation)
+Run the learned policy and replanner inside Gazebo; JIT mode in the 3D viewer; closing the 4U-2G gap by training; making candidates A and B work. The friend's laptop IP changes with the Wi-Fi (`hostname -I`); SSH key `~/.ssh/friend_gazebo`; remove access by deleting the last line of its `~/.ssh/authorized_keys`.

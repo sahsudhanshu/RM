@@ -2,7 +2,7 @@
 
 *Course:* Research Methodology (RM), IIIT Allahabad (IIT2024036 · IIT2024081 · IIT2024146).
 *Team:* Mayank Anand, Sudhanshu (Sah), Sujal.
-*Last updated:* 2026-11-20 (see "Status" at the bottom).
+*Last updated:* 2026-11-23 (see §10 "Final state" at the bottom; §9 is the older status).
 
 ---
 
@@ -18,6 +18,10 @@
 | `base_papers/` | **Downloaded 2026-11-21:** the base paper PDF, the authors' public code (`authors_code_multi-uav-ugv-drl/`, third-party, read-only, never executed), open-access related papers by the same group and the methods papers it builds on. `base_papers/README.md` lists sources and what could not be downloaded (paywalled). |
 | `friend_presentation/` | A **different** group's work on the **same base paper** (see §4). Only used as a style/pipeline reference. |
 | `presentation.zip` | Zip of `friend_presentation/` (identical content). |
+| `context.md` | This file: project context and final state. |
+| `chat.md` | Running log of the whole work (decisions, results, problems), newest at the bottom. |
+| `checkpoint.md` | Short resume note: current state, how to rebuild and what is left. |
+| `presentation_script.md` | **End-sem presentation script**: 3 parts for 3 speakers, every slide taught, the 3 demos, Q&A and cut list. |
 
 The implementation lives **outside** this folder, in `../implementation/`.
 
@@ -195,7 +199,7 @@ Map study (rule-based policy, 2U-1G, 60 instances; `scripts/map_study.py`, `resu
 
 Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is already authenticated. Nothing has been uploaded yet. `implementation/kaggle/` holds the dataset (code zip) and one kernel per map; `scripts/kaggle_run.py` trains and evaluates map x seed x variants (resumable). A `--quick` smoke test of the full pipeline passed.
 
-## 9. Status (2026-11-22)
+## 9. Status (2026-11-22) — superseded by §10
 
 * [x] Context gathered; initial files in `context/`; base papers + authors' code downloaded to `context/base_papers/`.
 * [x] Implementation, 35 tests, experiments (2U-1G/2U-2G local; **4 maps x 3 seeds on Kaggle**), figures, report, 2D video, **3D browser viewer (18 scenarios incl. worst and failed cases)**.
@@ -209,3 +213,44 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 * [ ] Still open: Gazebo coupling (skipped by user), 4U-2G base gap (9-14 %), candidates A/B negative.
 
 * [x] 10240-sample decoding done: 197.5/157.2/135.3/135.2 min (paper 218.6/199.7/154.4/159.9).
+
+
+---
+
+## 10. Final state (end-semester, 2026-11-23)
+
+### Deliverables
+| What | Where |
+|---|---|
+| **Final deck, 25 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
+| Full 44-slide deck (backup, has the removed slides) | `presentation_final/Presentation_full_44slides.pdf`, `body_full_44slides.tex` |
+| **Presentation script** (3 speakers, per-slide teaching, demos, Q&A) | `context/presentation_script.md` |
+| 3D browser viewer (18 scenarios, open-loop vs replanning) | `implementation/viewer/index_offline.html` (works offline); notes `implementation/viewer/DEMO.md` |
+| Gazebo experiment replays (22 runs) and results | `implementation/gazebo/` (`gazebo_vs_plan.csv`, `results*/`, videos in `videos/` and `videos_terrain/`, git-ignored) |
+| **Runnable 3D Gazebo demo** (no experiments) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
+| Code, tests (35), results, README | `implementation/` (`README.md` documents every experiment) |
+
+Repository: GitHub `sahsudhanshu/RM` (branch `main`). Not in the repo (size or reproducible): `.venv`, `presentation_final/.texlocal` (local TeX, 230 MB), `*.pt` checkpoints, raw per-instance Kaggle tables, Gazebo videos/run folders.
+
+### Story of the deck (25 slides)
+Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-15: reproduce base, event-triggered replanning, learning policies, experimental design) -> results (16-21) -> Gazebo (22) -> hypotheses (23) -> conclusion and limits (24) -> references (25).
+
+### Key results (all with the numbers used in the deck)
+* Road events hurt: up to +22 % time and +29 % energy (border map, open-loop rule policy, 18 events).
+* Event-triggered replanning beats open loop in 12/12 (map, seed) combinations (15 to 41 min, 260 to 1000 kJ) and matches periodic replanning (within 0.3 min) with 1 to 3 fewer replans.
+* Why the energy-aware methods have little to gain: time and energy correlate at 0.96 over sampled routes (hover waiting is about half of E); candidates A and B equal their control (negative result).
+* Lever that works: just-in-time departure, -53 to -74 % UAV energy at +0 min (assumes free waiting on the ground); by team size with events -18 / -54 / -40 / -69 % (1U-1G, 2U-1G, 2U-2G, 4U-2G); re-predicting the UGV arrival at take-off cuts the remaining hover energy 241 -> 80 kJ.
+* Sampling (64 samples, keep fastest within budget) + JIT, 4 maps x 3 seeds, 2U-1G: time 228 -> 182 min (-20 %), energy 4407 -> 1524 kJ (-65 %), over-budget 78 % -> 0 % (static); with events 270 -> 205 min, 5531 -> 1841 kJ, 91 % -> 2 %.
+* Base reproduction: within about 10 % of the paper's greedy DRL for 3 of 4 teams; 4U-2G 9 to 14 % slower, more training does not help (211 -> 210 min); best of 10,240 samples gives 197.5 / 157.2 / 135.3 / 135.2 min vs the paper's 218.6 / 199.7 / 154.4 / 159.9 (reconstructed map: no claim to beat the paper).
+* Gazebo: 22 replays (16 flat, 6 real terrain): time within 0.14 % of the plans (max 0.8 min), UAV energy within 0.5 %, UGV arrives 11 to 16 s late on average.
+
+### Negative results and limits (always state them)
+Candidates A and B no better than the control; search distillation and adaptive sampling no gain; 4U-2G gap not closed by training (search closes it); one bad seed (loop map, seed 2) loops, a fallback removes its failures but it stays about 2x slower; Gazebo replays plans only (the learned policy is not run inside it, UAV flight is kinematic); JIT assumes free ground waiting and predictable UGV arrival; the 3D viewer has no JIT mode; Google Earth data cannot be downloaded programmatically, the terrain uses open SRTM-derived data.
+
+### How to rebuild and run
+```bash
+cd presentation_final && python3 make_figs.py && TEXMFHOME=$PWD/.texlocal/usr/share/texlive/texmf-dist python3 build.py   # needs .texlocal
+open implementation/viewer/index_offline.html            # 3D viewer (any browser)
+cd implementation/gazebo && unzip gazebo_demo.zip && cd demo && ./run_demo.sh     # 3D Gazebo demo (Ubuntu + gz-harmonic, desktop)
+```
+The Gazebo machine used so far is the friend's Ubuntu 24.04 laptop (RTX 3050) over SSH; always run replays with `GZ_IP=127.0.0.1` so a Wi-Fi change cannot hang them.
