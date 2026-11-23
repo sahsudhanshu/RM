@@ -13,6 +13,8 @@ SCENARIOS = [  # (case index in missions.json, output name)
     (2, "3d_viewer_ringroad_best_case.mp4"),       # ring road, slow edges, best case: replanning saves ~87 min
     (7, "3d_viewer_border_worst_case.mp4"),        # border, blocked road, worst case: replanning is slower (shown honestly)
     (6, "3d_viewer_ringroad_cut_road.mp4"),        # bridge cut: open-loop fails, replanning completes
+    (23, "3d_viewer_team_4u2g_block_best_case.mp4"),   # 4 UAVs + 2 UGVs, blocked road: 272 -> 166 min
+    (24, "3d_viewer_team_4u2g_cut_road.mp4"),          # 4 UAVs + 2 UGVs, bridge cut: open-loop fails
 ]
 ap = argparse.ArgumentParser()
 ap.add_argument("--case", type=int, default=None); ap.add_argument("--out", default=None)

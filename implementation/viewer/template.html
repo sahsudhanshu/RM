@@ -8,7 +8,7 @@
    two controllers) over a readout strip and one shared timeline. Colour tokens double as the scene palette. */
 :root {
   --bg: #eef2f0; --panel: #ffffff; --fg: #14201c; --muted: #55655f; --line: #d3dcd8;
-  --accent: #1f6fd1; --uav1: #2a78d6; --uav2: #eb6834; --ugv: #159a6c; --block: #d93f3e; --slow: #e0a000;
+  --accent: #1f6fd1; --uav1: #2a78d6; --uav2: #eb6834; --uav3: #12a3b0; --uav4: #8a56d6; --ugv: #159a6c; --ugv2: #5b6c8f; --ugv3: #b5651d; --block: #d93f3e; --slow: #e0a000;
   --scene: #e4ebe8; --ground: #d6e0db; --grid: #bccac3; --road: #8d9b95; --task-open: #d93f3e; --task-done: #9aa8a2;
   --ink-open: #6b7a74;
   --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -17,14 +17,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0c1311; --panel: #131d1a; --fg: #e5eee9; --muted: #92a39c; --line: #25342f;
-    --accent: #5a9cf0; --uav1: #4d94ee; --uav2: #f08052; --ugv: #2fc690; --block: #f06362; --slow: #f0b323;
+    --accent: #5a9cf0; --uav1: #4d94ee; --uav2: #f08052; --uav3: #3cc4d0; --uav4: #a98af0; --ugv: #2fc690; --ugv2: #8aa0c8; --ugv3: #e09050; --block: #f06362; --slow: #f0b323;
     --scene: #0a100e; --ground: #111b18; --grid: #1f2e29; --road: #566861; --task-open: #f06362; --task-done: #4c5c56;
     --ink-open: #92a39c; color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --bg: #0c1311; --panel: #131d1a; --fg: #e5eee9; --muted: #92a39c; --line: #25342f;
-  --accent: #5a9cf0; --uav1: #4d94ee; --uav2: #f08052; --ugv: #2fc690; --block: #f06362; --slow: #f0b323;
+  --accent: #5a9cf0; --uav1: #4d94ee; --uav2: #f08052; --uav3: #3cc4d0; --uav4: #a98af0; --ugv: #2fc690; --ugv2: #8aa0c8; --ugv3: #e09050; --block: #f06362; --slow: #f0b323;
   --scene: #0a100e; --ground: #111b18; --grid: #1f2e29; --road: #566861; --task-open: #f06362; --task-done: #4c5c56;
   --ink-open: #92a39c; color-scheme: dark;
 }
@@ -126,9 +126,7 @@ button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent);
     </div>
     <canvas id="chart" aria-label="Cumulative UAV energy over mission time for both controllers"></canvas>
     <div class="legend">
-      <span><i class="sw" style="background:var(--uav1)"></i>UAV 1</span>
-      <span><i class="sw" style="background:var(--uav2)"></i>UAV 2</span>
-      <span><i class="sw" style="background:var(--ugv)"></i>UGV and its route</span>
+      <span id="lg-agents" style="display:contents"></span>
       <span><i class="sw" style="background:var(--block)"></i>blocked road</span>
       <span><i class="sw" style="background:var(--slow)"></i>slowed road</span>
       <span><i class="dot" style="background:var(--task-open)"></i>aerial task, not yet visited</span>
@@ -162,6 +160,7 @@ class Run {
     this.dep = t.xy[t.depot];
     this.depNode = t.node[t.depot];
     this.nUav = Math.max(...this.legs.map(l => l.u)) + 1;
+    this.nUgv = Math.max(0, ...this.drives.map(d => d.n), ...this.svc.map(s => s.g)) + 1;
   }
   uav(u, t) {
     let x = this.dep[0], y = this.dep[1], fuel = F;
@@ -188,10 +187,11 @@ class Run {
     const done = this.legs.some(L => L.u === u && L.t1 <= t);
     return { x, y, z: PAD, bat: fuel / F, st: done ? 'done' : 'idle' };
   }
-  ugv(t) {
+  ugv(t, g = 0) {
     const xy = this.c.roads.xy;
     let p = xy[this.depNode];
     for (const d of this.drives) {
+      if (d.n !== g) continue;
       if (t < d.ta) break;
       if (t < d.tb) { const f = (t - d.ta) / Math.max(d.tb - d.ta, 1e-9); return [xy[d.a][0] + f * (xy[d.b][0] - xy[d.a][0]), xy[d.a][1] + f * (xy[d.b][1] - xy[d.a][1])]; }
       p = xy[d.b];
@@ -211,6 +211,7 @@ class Run {
   }
 }
 
+const UAV_VARS = ['--uav1', '--uav2', '--uav3', '--uav4'], UGV_VARS = ['--ugv', '--ugv2', '--ugv3'];
 /* ---------- 3D world for one run ---------- */
 const hex = (s) => new THREE.Color(s);
 class World {
@@ -253,28 +254,31 @@ class World {
       }
     });
     // UGV
-    this.ugv = new THREE.Group();
-    const body = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.14, 0.34), new THREE.MeshLambertMaterial({ color: hex(cv('--ugv')) })); body.position.y = 0.09;
-    const pad = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.28), new THREE.MeshLambertMaterial({ color: hex(cv('--fg')) })); pad.position.y = 0.17;
-    this.ugv.add(body, pad); this.scene.add(this.ugv);
+    this.ugvs = []; this.ugvMats = [];
+    for (let g = 0; g < run.nUgv; g++) {
+      const grp = new THREE.Group(), bm = new THREE.MeshLambertMaterial({ color: hex(cv(UGV_VARS[g % 3])) });
+      const body = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.14, 0.34), bm); body.position.y = 0.09;
+      const pad = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.28), new THREE.MeshLambertMaterial({ color: hex(cv('--fg')) })); pad.position.y = 0.17;
+      grp.add(body, pad); this.scene.add(grp); this.ugvs.push(grp); this.ugvMats.push(bm);
+    }
     // UAVs
     this.uavs = []; this.drops = []; this.trails = [];
-    const cols = [cv('--uav1'), cv('--uav2')];
+    const cols = UAV_VARS.map((v) => cv(v));
     this.dt = 0.5; this.nTrail = Math.ceil(tmax / this.dt) + 2;
     for (let u = 0; u < run.nUav; u++) {
-      const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color: hex(cols[u % 2]) });
+      const g = new THREE.Group(), m = new THREE.MeshLambertMaterial({ color: hex(cols[u % 4]) });
       g.add(new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.06, 0.16), m));
       for (const r of [Math.PI / 4, -Math.PI / 4]) { const arm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.02, 0.03), m); arm.rotation.y = r; g.add(arm); }
       for (const [dx, dz] of [[.18, .18], [-.18, .18], [.18, -.18], [-.18, -.18]]) {
-        const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.01, 14), new THREE.MeshBasicMaterial({ color: hex(cols[u % 2]), transparent: true, opacity: 0.35 }));
+        const rot = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.01, 14), new THREE.MeshBasicMaterial({ color: hex(cols[u % 4]), transparent: true, opacity: 0.35 }));
         rot.position.set(dx, 0.035, dz); g.add(rot);
       }
       this.scene.add(g); this.uavs.push(g);
-      const dl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), new THREE.LineBasicMaterial({ color: hex(cols[u % 2]), transparent: true, opacity: 0.45 }));
+      const dl = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)]), new THREE.LineBasicMaterial({ color: hex(cols[u % 4]), transparent: true, opacity: 0.45 }));
       this.scene.add(dl); this.drops.push(dl);
-      this.trails.push(this.makeTrail(cols[u % 2], (t) => { const s = run.uav(u, t); return [s.x, s.z, s.y]; }));
+      this.trails.push(this.makeTrail(cols[u % 4], (t) => { const s = run.uav(u, t); return [s.x, s.z, s.y]; }));
     }
-    this.trails.push(this.makeTrail(cv('--ugv'), (t) => { const p = run.ugv(t); return [p[0], 0.06, p[1]]; }));
+    for (let g = 0; g < run.nUgv; g++) this.trails.push(this.makeTrail(cv(UGV_VARS[g % 3]), (t) => { const p = run.ugv(t, g); return [p[0], 0.06, p[1]]; }));
     // border-surveillance overlay: patrol strip + border line
     if (c.border) {
       const [[sx0, sy0], [sx1, sy1], half] = c.strip, dx = sx1 - sx0, dy = sy1 - sy0, len = Math.hypot(dx, dy);
@@ -317,6 +321,7 @@ class World {
     this.taskMat.open.color.set(cv('--task-open')); this.taskMat.done.color.set(cv('--task-done'));
     this.scene.background = hex(cv('--scene'));
     this.grid.material.color.set(cv('--grid'));
+    this.ugvMats.forEach((m, g) => m.color.set(cv(UGV_VARS[g % 3])));
   }
   update(t) {
     const r = this.run, ev = r.c.event;
@@ -324,7 +329,7 @@ class World {
     this.label.visible = t >= ev.t;
     const vis = r.visited(t), ng = r.c.tasks.n_ground;
     this.tasks.forEach((m, i) => { if (i >= ng) { m.material = vis.has(i) ? this.taskMat.done : this.taskMat.open; m.scale.setScalar(vis.has(i) ? 0.75 : 1); } });
-    const g = r.ugv(t); this.ugv.position.set(g[0], 0, g[1]);
+    for (let q = 0; q < r.nUgv; q++) { const g = r.ugv(t, q); this.ugvs[q].position.set(g[0], 0, g[1]); }
     const nu = r.nUav, states = [];
     for (let u = 0; u < nu; u++) {
       const s = r.uav(u, t); states.push(s);
@@ -365,6 +370,9 @@ function loadCase(i) {
   worlds = renderer ? runs.map((r) => new World(r, tmax)) : [];
   $('scrub').max = tmax.toFixed(1); t = 0; $('lg-border').hidden = !c.border;
   $('info').textContent = `[${c.tag}] ${c.note}. Instance seed ${c.seed}. The road event hits at t = ${c.event.t.toFixed(0)} min. Budget B = 0.9 B0 = ${c.budget.toFixed(0)} kJ; the same mission on static roads takes ${c.static.T.toFixed(0)} min and ${c.static.E.toFixed(0)} kJ.`;
+  const cav = $('caveat'); if (!cav.dataset.orig) cav.dataset.orig = cav.textContent;
+  cav.textContent = c.team ? `Team of ${c.team}: the same instance and road event under both controllers. Every setting is shown three ways (best, typical and worst case); in the stress case a bridge is cut so the map is disconnected and open-loop missions can fail.` : cav.dataset.orig;
+  $('lg-agents').innerHTML = Array.from({ length: runs[1].nUav }, (_, u) => `<span><i class="sw" style="background:var(${UAV_VARS[u % 4]})"></i>UAV ${u + 1}</span>`).join('') + Array.from({ length: runs[1].nUgv }, (_, g) => `<span><i class="sw" style="background:var(${UGV_VARS[g % 3]})"></i>UGV${runs[1].nUgv > 1 ? ' ' + (g + 1) : ''} and its route</span>`).join('');
   buildReads();
   drawChart();
   $('play').textContent = playing ? 'Pause' : 'Play';
@@ -375,7 +383,7 @@ function buildReads() {
   $('reads').innerHTML = '';
   reads = runs.map((r, k) => {
     const el = document.createElement('div'); el.className = 'card';
-    const agents = Array.from({ length: r.nUav }, (_, u) => `<span class="nm"><i class="dot" style="background:var(--uav${(u % 2) + 1})"></i>UAV ${u + 1}</span><span class="bat"><i style="background:var(--uav${(u % 2) + 1})"></i></span><span class="st"></span>`).join('');
+    const agents = Array.from({ length: r.nUav }, (_, u) => `<span class="nm"><i class="dot" style="background:var(--uav${(u % 4) + 1})"></i>UAV ${u + 1}</span><span class="bat"><i style="background:var(--uav${(u % 4) + 1})"></i></span><span class="st"></span>`).join('');
     el.innerHTML = `<h2>${names[k]}<span class="clk"></span></h2>
       <div class="erow"><span>UAV energy so far</span><strong class="en">0 kJ</strong></div>
       <div class="ebar"><i></i><b style="left:${Math.min(100, cur.budget / (Math.max(runs[0].E, runs[1].E, cur.budget) * 1.05) * 100)}%" title="budget"></b></div>
@@ -478,7 +486,8 @@ $('scrub').oninput = (e) => { t = parseFloat(e.target.value); updateAll(); };
 window.addEventListener('keydown', (e) => { if (e.code === 'Space' && !/SELECT|INPUT|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); $('play').click(); } });
 const groups = {};
 DATA.cases.forEach((c, i) => {
-  const g = groups[c.map] || (groups[c.map] = Object.assign(document.createElement('optgroup'), { label: { loop: 'Ring-road map', border: 'Border surveillance', paper: "Base paper's map" }[c.map] }));
+  const gk = c.map + '|' + (c.team || '');
+  const g = groups[gk] || (groups[gk] = Object.assign(document.createElement('optgroup'), { label: { loop: 'Ring-road map', border: 'Border surveillance', paper: "Base paper's map" }[c.map] + (c.team ? ' · ' + c.team : '') }));
   const o = document.createElement('option'); o.value = i; o.textContent = c.title.split(' · ').slice(1).join(' · '); g.appendChild(o);
 });
 Object.values(groups).forEach((g) => $('case').appendChild(g));

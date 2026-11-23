@@ -225,7 +225,7 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 | **Final deck, 29 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
 | Full 44-slide deck (backup, has the removed slides) | `presentation_final/Presentation_full_44slides.pdf`, `body_full_44slides.tex` |
 | **Presentation script** (3 speakers, per-slide teaching, demos, Q&A) | `context/presentation_script.md` |
-| 3D browser viewer (18 scenarios, open-loop vs replanning) and its **recorded videos** | `implementation/viewer/index_offline.html` (works offline); videos `implementation/viewer/videos/*.mp4` (made by `record_viewer.py`); notes `implementation/viewer/DEMO.md` |
+| 3D browser viewer (**32 scenarios incl. 4 UAVs + 2 UGVs and 2 UAVs + 2 UGVs**, open-loop vs replanning) and its **recorded videos**; 2D animations of the teams in `implementation/results/U15G5_4U2G/media/` and `U15G5_2U2G/media/` | `implementation/viewer/index_offline.html` (works offline); videos `implementation/viewer/videos/*.mp4` (made by `record_viewer.py`); notes `implementation/viewer/DEMO.md` |
 | Gazebo experiment replays (22 runs) and results | `implementation/gazebo/` (`gazebo_vs_plan.csv`, `results*/`, videos in `videos/` and `videos_terrain/`, git-ignored) |
 | **Four runnable 3D Gazebo demos** (menu `demos.sh`): simple (`run_demo.sh`), **fallen tree** (`run_tree_demo.sh`), **team with 4 UAVs + 2 UGVs** (`run_team_demo.sh`), **diversion** (`run_divert_demo.sh`: UAV flies from a checkpoint to the UGV, road blocked by a tree, team replans; UAV battery bars) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
 | Code, tests (35), results, README | `implementation/` (`README.md` documents every experiment) |
@@ -268,3 +268,6 @@ Workspace 20 x 20 km (aerial tasks within 7 km of the depot); UAV 10 m/s; UGV 4.
 
 ### Gazebo demo 4 (diversion) and the team demo
 Border-map "cut road" case: UAV 1 visits checkpoints, flies back to the UGV (arrives with 31% battery), a tree blocks the UGV's road, the UAV hovers, the team replans, the UAV diverts to a new rendezvous (lands with 3%), the open-loop plan of the same case fails. Team demo: 4 UAVs + 2 UGVs on the ring road, tree blocks the road, team replans (open-loop 272 min vs replanned 166 min); trucks drive in separate lanes and do not collide with each other (without this the two trucks jammed at the depot).
+
+### Multiple vehicles in the viewers (2026-11-23)
+The 3D viewer and the 2D animation now draw several UGVs and UAVs: per-truck routes and colours, four UAV colours, a battery/state row per UAV, an adaptive legend, and team groups in the scenario list (`scripts/export_viewer_multi.py` appends the 4U-2G and 2U-2G ring-road cases to `viewer/missions.json`). Best 4U-2G case: blocked road, open-loop 272 min over budget vs replanning 166 min within budget.

@@ -16,6 +16,7 @@ INK, MUTED, GRID, SURF = "#0b0b0b", "#52514e", "#d9d8d2", "#fcfcfb"
 RED = "#e34948"
 SLOW = "#eda100"      # slowed road (distinct from the UAV colours)
 UAV_COL = [BLUE, ORANGE, AQUA, "#6250d6"]
+UGV_COL = ["#159a6c", "#2f5d8a", "#a05a2c"]        # one colour per truck
 
 
 def style_axes(ax):
@@ -149,7 +150,7 @@ def animate_pair(scn, left, right, params, events, out_path, labels=("Open-loop"
         ax.scatter(scn.xy[scn.n_ground:, 0], scn.xy[scn.n_ground:, 1], facecolors="none", edgecolors=RED, s=34, lw=1.2, zorder=5)
         sc_vis = ax.scatter([], [], c=RED, s=34, zorder=6)
         task_art.append(sc_vis)
-        ugv_art.append(ax.scatter([], [], marker="s", s=150, c=AQUA, edgecolors=INK, lw=1.2, zorder=8))
+        ugv_art.append([ax.scatter([], [], marker="s", s=150, c=UGV_COL[g % 3], edgecolors=INK, lw=1.2, zorder=8) for g in range(tl.n_ugv)])
         uav_art.append([ax.scatter([], [], marker="^", s=110, c=UAV_COL[u % 4], edgecolors=INK, lw=1, zorder=9)
                         for u in range(tl.n_uav)])
         txt_art.append(ax.text(.02, .02, "", transform=ax.transAxes, fontsize=8.5, color=INK, va="bottom",
@@ -174,11 +175,12 @@ def animate_pair(scn, left, right, params, events, out_path, labels=("Open-loop"
     for ax in axes:
         for l in ax.lines:
             pass
-    legend = [Line2D([], [], marker="^", ls="", color=UAV_COL[0], mec=INK, label="UAV"),
-              Line2D([], [], marker="s", ls="", color=AQUA, mec=INK, label="UGV"),
+    n_ugv = max(t.n_ugv for t in tls); n_uav = max(t.n_uav for t in tls)
+    legend = [Line2D([], [], marker="^", ls="", color=UAV_COL[u % 4], mec=INK, label=f"UAV {u + 1}" if n_uav > 1 else "UAV") for u in range(n_uav)] + \
+             [Line2D([], [], marker="s", ls="", color=UGV_COL[g % 3], mec=INK, label=f"UGV {g + 1}" if n_ugv > 1 else "UGV") for g in range(n_ugv)] + [
               Line2D([], [], color=RED, lw=4, label="blocked road"),
               Line2D([], [], color=SLOW, lw=4, label="slowed road")]
-    axes[0].legend(handles=legend, loc="upper left", fontsize=7.5, frameon=False, ncol=2)
+    axes[0].legend(handles=legend, loc="upper left", fontsize=7.5, frameon=False, ncol=2 if len(legend) < 7 else 3)
     shown = {}
 
     def update(k):
@@ -196,7 +198,8 @@ def animate_pair(scn, left, right, params, events, out_path, labels=("Open-loop"
             vis = tl.visited_at(t)
             idx = [j for j in vis if j >= scn.n_ground]
             task_art[i].set_offsets(scn.xy[idx] if idx else np.empty((0, 2)))
-            ugv_art[i].set_offsets([tl.ugv(0, t)])
+            for g in range(tl.n_ugv):
+                ugv_art[i][g].set_offsets([tl.ugv(g, t)])
             states = []
             for u in range(tl.n_uav):
                 x, y, b, st = tl.uav(u, t)

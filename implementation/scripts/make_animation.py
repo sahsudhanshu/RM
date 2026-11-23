@@ -35,16 +35,18 @@ if __name__ == "__main__":
     ap.add_argument("--level", default="high")
     ap.add_argument("--timing", default="early")
     ap.add_argument("--model", default="p0")
+    ap.add_argument("--roads", default=None, help="road map (loop, border, paper, ...); default: the Setting default")
+    ap.add_argument("--model-path", default=None, help="explicit p0 checkpoint (e.g. results_kaggle/loop-4u2g/models/U15G5_4U2G/p0.pt); the team demo needs the Kaggle-trained 4U-2G / 2U-2G policies")
     ap.add_argument("--n", type=int, default=40)
     ap.add_argument("--seed", type=int, default=None, help="use this test seed instead of the best-gain one")
     ap.add_argument("--gif", action="store_true")
     ap.add_argument("--frames", type=int, default=240)
     a = ap.parse_args()
     torch.set_num_threads(2)
-    s = Setting(n_uav=a.uav, n_ugv=a.ugv)
+    s = Setting(n_uav=a.uav, n_ugv=a.ugv, **({"roads": a.roads} if a.roads else {}))
     models = os.path.join(ROOT, "models", s.tag)
-    base = load_model(os.path.join(models, "p0.pt"))
-    model = load_model(os.path.join(models, f"{a.model}.pt"))
+    base = load_model(a.model_path or os.path.join(models, "p0.pt"))
+    model = base if a.model_path else load_model(os.path.join(models, f"{a.model}.pt"))
     cases = build_cases(s, base, a.n)
     best = None
     for c in cases:
@@ -55,6 +57,8 @@ if __name__ == "__main__":
         for mode, aware in (("open", False), ("event", True)):
             env = new_env(s, c.scn, events=(ev,), road_aware=aware)
             runs.append(run_controller(env, greedy_planner(model), mode))
+        if a.ugv > 1 and (runs[1][0].failed or len({d[0] for d in runs[1][0].ugv_drives}) < a.ugv):
+            continue                                                   # team demo: every truck must be used
         gain = runs[0][0].cost - runs[1][0].cost
         if best is None or gain > best[0]:
             best = (gain, c, ev, runs)

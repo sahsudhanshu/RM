@@ -7,8 +7,11 @@
 | `index.html` | Same page, loads three.js from the internet. This is the one published as the Claude artifact (private link; share it from the page's Share menu if the professor needs the link). |
 | `../results/U15G5_2U1G/media/mission_slow_high_early.mp4` (+ `.gif`) | 2D video of one scenario, side by side. Backup if a browser misbehaves. |
 
+## Multiple UGVs and UAVs (new)
+The scenario list now also has **4 UAVs + 2 UGVs** and **2 UAVs + 2 UGVs** groups on the ring-road map (7 cases each: slow road and blocked road best/typical/worst, plus the cut-road stress test; 32 scenarios in total). The viewer draws every truck (green, blue-grey, brown) with its own route, four UAV colours, one battery/status row per UAV and a legend that adapts to the team. Regenerate with `scripts/export_viewer_multi.py` then `scripts/build_viewer.py`. Two-dimensional version: `scripts/make_animation.py --uav 4 --ugv 2 --kind block --level medium --timing middle --model-path results_kaggle/loop-4u2g/models/U15G5_4U2G/p0.pt` (writes `results/U15G5_4U2G/media/`).
+
 ## Recorded videos (backup, no browser needed)
-`videos/3d_viewer_ringroad_best_case.mp4`, `videos/3d_viewer_border_worst_case.mp4`, `videos/3d_viewer_ringroad_cut_road.mp4`: the 3D viewer played through three scenarios (open-loop left, event-triggered replanning right, live stats and timeline). Re-record with `python3 record_viewer.py` (headless Chrome; time is set frame by frame through the scrubber, so the video is smooth); options `--case N --speed M --fps F --out file.mp4`.
+`videos/3d_viewer_ringroad_best_case.mp4`, `videos/3d_viewer_border_worst_case.mp4`, `videos/3d_viewer_ringroad_cut_road.mp4`, and for the teams `videos/3d_viewer_team_4u2g_block_best_case.mp4`, `videos/3d_viewer_team_4u2g_cut_road.mp4`: the 3D viewer played through three scenarios (open-loop left, event-triggered replanning right, live stats and timeline). Re-record with `python3 record_viewer.py` (headless Chrome; time is set frame by frame through the scrubber, so the video is smooth); options `--case N --speed M --fps F --out file.mp4`.
 
 ## 90-second script
 1. *(Scenario list, ring-road map "slow edges, high, early")* "Two UAVs and one UGV must visit all task points. The UGV is the charging station and is slow, so UAVs hover and wait for it. Both panels are the same instance and the same road event; only the controller differs."

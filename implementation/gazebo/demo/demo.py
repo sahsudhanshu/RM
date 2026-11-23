@@ -223,6 +223,7 @@ def uav_tick(uid, st, t):
             vel(n, 0, 0, 0)
             if st["ride"] is None and st["k"] > 0: st["hover"] += HOV_PER_DEMO_S * dt          # waiting in the air: counts in the mission energy E, not in the sortie battery F_a (as in training)
             return
+        if st["ride"] is not None: set_pose(n, px, py, pz, 0.0)           # leave the truck with heading 0: velocity commands are body-frame, a truck heading would turn them
         st["ride"] = None; st["mode"] = "fly"
         if st.get("diverted") and ("div", st["k"]) not in st["told"]: st["told"].add(("div", st["k"])); say(t, f"REPLANNED: UAV {uid} takes off again and diverts to a new rendezvous the UGV can reach (battery {battery_pct(uid):.0f}%)")
         elif l["land"] and ("go", st["k"]) not in st["told"]: st["told"].add(("go", st["k"])); say(t, f"UAV {uid} leaves its last checkpoint and flies to the UGV rendezvous (battery {battery_pct(uid):.0f}%)")
@@ -337,7 +338,7 @@ try:
             b = frames.pop(0)
             if ff:
                 im = PILImage.frombytes("RGB", (1280, 720), b); d = ImageDraw.Draw(im); pm = t * C / 60
-                d.rectangle([0, 0, 1280, 44], fill=(255, 255, 255)); d.text((14, 8), f"{plan['title']} | {plan['mode']}", fill=(20, 40, 70), font=FONT); d.text((1010, 8), f"plan time {int(pm // 60)}:{int(pm % 60):02d} h", fill=(20, 40, 70), font=FONT)
+                d.rectangle([0, 0, 1280, 44], fill=(255, 255, 255)); d.text((14, 8), (lambda s_: s_ if d.textlength(s_, font=FONT) < 960 else s_[:max(10, int(len(s_) * 960 / d.textlength(s_, font=FONT)) - 2)] + "…")(f"{plan['title']} | {plan['mode']}"), fill=(20, 40, 70), font=FONT); d.text((1010, 8), f"plan time {int(pm // 60)}:{int(pm % 60):02d} h", fill=(20, 40, 70), font=FONT)
                 for k_, (uid_, st_) in enumerate(uavs.items()):
                     pct = battery_pct(uid_); col = {0: (26, 102, 230), 1: (217, 51, 153), 2: (26, 191, 204), 3: (242, 128, 26)}[uid_ % 4]; y0 = 54 + 22 * k_
                     d.rectangle([10, y0, 270, y0 + 18], fill=(255, 255, 255), outline=(120, 130, 140)); d.rectangle([12, y0 + 2, 12 + int(2.54 * pct), y0 + 16], fill=(217, 64, 38) if pct < 20 else col)

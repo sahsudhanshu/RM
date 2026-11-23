@@ -24,7 +24,7 @@ Total about 38 min including demos. **If you only have 20 min**, use the cut lis
 5. Practise the three hand-overs (end of each part) so the transition takes 5 seconds.
 
 ### Viewer controls (for the demos)
-Scenario list (top), **3D / Top** view, **Play/Pause** (Space), **Restart**, **Speed** slider (6 to 60 min per second), click the chart to jump in time. Left panel = open-loop (never replans), right panel = event-triggered replanning. Both panels run the **same instance and the same road event**; only the controller differs. Amber road = slow, red = blocked. UAV height is exaggerated for readability.
+Scenario list (top; it now has **4 UAVs + 2 UGVs** and **2 UAVs + 2 UGVs** groups as well as the single-truck ones), **3D / Top** view, **Play/Pause** (Space), **Restart**, **Speed** slider (6 to 60 min per second), click the chart to jump in time. Left panel = open-loop (never replans), right panel = event-triggered replanning. Both panels run the **same instance and the same road event**; only the controller differs. Amber road = slow, red = blocked. UAV height is exaggerated for readability.
 
 ---
 
@@ -195,7 +195,8 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 2. **Honest worst case:** choose **Border surveillance, block edges, medium, middle, worst case**. **Say:** "Replanning is not always better. Here replanning made this instance about 48 minutes slower than open-loop. Averaged over the test instances it still wins clearly, and we report cases like this one instead of hiding them."
 3. **Cut road:** choose **cut road (stress test)** on the border or ring-road map. **Say:** "If a bridge is cut and the map is disconnected, open-loop fails and the mission is never completed. Replanning rescues some missions, but not all, because some UAVs have already committed their last battery."
 4. Switch to **Top** view briefly to show the border strip and roads if time allows.
-5. **Gazebo fallen tree (30 to 40 s):** play `implementation/gazebo/demo_preview_tree_border.mp4` (or `demo_preview_tree_loop.mp4`). **Say:** "Same idea, now in Gazebo. A tree stands beside the road. It falls across it and the road is blocked; the orange line is the route we were going to take. The planner updates its road map and replans: the green line is the new route, and the truck takes the detour."
+5. **Several vehicles in the viewer (30 s):** choose the group **Ring-road map · 4 UAVs + 2 UGVs**, scenario *block edges, medium, middle · best case*. **Say:** "Now a bigger team: four drones and two trucks. Left: open-loop, 272 minutes and over budget. Right: replanning, 166 minutes and within budget." (Recorded backup: `implementation/viewer/videos/3d_viewer_team_4u2g_block_best_case.mp4`.)
+6. **Gazebo fallen tree (30 to 40 s):** play `implementation/gazebo/demo_preview_tree_border.mp4` (or `demo_preview_tree_loop.mp4`). **Say:** "Same idea, now in Gazebo. A tree stands beside the road. It falls across it and the road is blocked; the orange line is the route we were going to take. The planner updates its road map and replans: the green line is the new route, and the truck takes the detour."
 
 ## Slide 14: Step 3: Learning the policies (1 min 15 s)
 **On screen:** pipeline: clone the rule policy (imitation), REINFORCE on time = P0, fan-out to P0+ control, P2 fixed penalty, P3 (A) Lagrangian, P4 (B) budget input; dashed to P1 (at inference): sample N routes, keep the fastest with E ≤ B; caption on Transformer, attention model and REINFORCE.
