@@ -76,6 +76,30 @@ def task_marker(name, x, y, z, aerial, done=False):
             + box("h3", "3.4 0.6 0.02", "0 0 0.13 0 0 0", "0.1 0.1 0.1 1") + "</link></model>")
 
 
+def tree_sdf(name, x, y, z, yaw, tilt=0.0):
+    """A tree whose origin is at the base of the trunk: trunk along +z; tilt rotates it (about y, then yaw) so the top falls towards +x of the model."""
+    trunk = cyl("trunk", 0.55, 10.0, "0 0 5.0 0 0 0", "0.36 0.24 0.14 1") + cyl("root", 0.95, 0.5, "0 0 0.25 0 0 0", "0.30 0.20 0.12 1")
+    leaves = "".join(sph(f"leaf{i}", r, f"{lx} {ly} {lz} 0 0 0", c) for i, (lx, ly, lz, r, c) in enumerate([
+        (0, 0, 10.5, 3.4, "0.13 0.45 0.16 1"), (1.8, 0.6, 8.8, 2.5, "0.16 0.52 0.19 1"), (-1.7, -0.5, 8.6, 2.6, "0.12 0.40 0.15 1"), (0.4, 1.8, 9.2, 2.2, "0.18 0.55 0.20 1")]))
+    branches = box("br1", "0.25 0.25 3.2", "1.1 0 6.6 0 0.6 0", "0.36 0.24 0.14 1") + box("br2", "0.25 0.25 3.0", "-1.0 0.3 7.0 0 -0.6 0", "0.36 0.24 0.14 1")
+    return (f'<model name="{name}"><pose>{x:.2f} {y:.2f} {z:.2f} 0 {tilt:.4f} {yaw:.4f}</pose><link name="t"><gravity>false</gravity>{inertia(50, 100, 100, 5)}{trunk}{leaves}{branches}</link></model>')
+
+
+def route_sdf(name, segments, color, z, width=1.6):
+    """Static strips along road segments [(x0, y0, x1, y1, z0, z1)] to show a planned route."""
+    vis = ""
+    for k, (x0, y0, x1, y1, za, zb) in enumerate(segments):
+        L = math.hypot(x1 - x0, y1 - y0); yaw = math.atan2(y1 - y0, x1 - x0); pitch = -math.atan2(zb - za, max(L, 1e-6))
+        vis += box(f"s{k}", f"{L + 0.6:.2f} {width} 0.12", f"{(x0 + x1) / 2:.2f} {(y0 + y1) / 2:.2f} {(za + zb) / 2 + z:.2f} 0 {pitch:.4f} {yaw:.4f}", color)
+    return f"<sdf version='1.9'><model name='{name}'><static>true</static><link name='l'>{vis}</link></model></sdf>"
+
+
+def barrier_sdf(name, x, y, z, yaw):
+    stripes = "".join(box(f"st{i}", "0.5 0.4 0.5", f"0 {(-2.0 + i * 1.0):.2f} 0.9 0 0 0", "0.95 0.95 0.95 1" if i % 2 else "0.85 0.10 0.10 1") for i in range(5))
+    return (f"<sdf version='1.9'><model name='{name}'><static>true</static><pose>{x:.2f} {y:.2f} {z:.2f} 0 0 {yaw:.4f}</pose><link name='l'>"
+            + box("bar", "0.3 5.0 0.55", "0 0 0.9 0 0 0", "0.85 0.10 0.10 1") + stripes + cyl("leg1", 0.08, 1.2, "0 -2.3 0.6 0 0 0", "0.2 0.2 0.2 1") + cyl("leg2", 0.08, 1.2, "0 2.3 0.6 0 0 0", "0.2 0.2 0.2 1") + "</link></model></sdf>")
+
+
 def event_marker_sdf(name, x0, y0, x1, y1, z, kind):
     L = math.hypot(x1 - x0, y1 - y0); yaw = math.atan2(y1 - y0, x1 - x0); c = "0.85 0.10 0.10 1" if kind == "block" else "0.95 0.65 0.05 1"
     cones = "".join(f'<visual name="k{i}"><pose>{(-L / 2 + (i + 0.5) * L / max(2, int(L // 6))):.2f} 0 0.9 0 0 0</pose><geometry><cylinder><radius>0.45</radius><length>1.8</length></cylinder></geometry>{mat(c)}</visual>' for i in range(max(2, int(L // 6))))
@@ -83,7 +107,7 @@ def event_marker_sdf(name, x0, y0, x1, y1, z, kind):
             f"{box('strip', f'{L:.1f} 7.0 0.25', '0 0 0.12 0 0 0', c)}{cones}</link></model></sdf>")
 
 
-def world_sdf(plan, terrain=None, record_cam=None, cam_res=(1280, 720)):
+def world_sdf(plan, terrain=None, record_cam=None, cam_res=(1280, 720), trees=()):
     """plan: scaled plan (demo metres). terrain: dict(dir, size, relief, dem). record_cam: (x,y,z,pitch,yaw) -> adds a camera sensor."""
     gz = terrain_fn(terrain) if terrain else (lambda x, y: 0.0)
     xy, edges = plan["roads"]["xy"], plan["roads"]["edges"]
@@ -137,5 +161,5 @@ def world_sdf(plan, terrain=None, record_cam=None, cam_res=(1280, 720)):
   <light type="directional" name="sun"><cast_shadows>true</cast_shadows><pose>0 0 200 0 0 0</pose><diffuse>1 0.97 0.9 1</diffuse><specular>0.25 0.25 0.25 1</specular><direction>-0.5 0.3 -1</direction></light>
   {ground}
   <model name="map"><static>true</static><link name="l">{''.join(body)}</link></model>
-  {depot}{''.join(tasks)}{''.join(vehicles)}{cam}
+  {depot}{''.join(tasks)}{''.join(vehicles)}{''.join(tree_sdf(n, x, y, z, yaw) for (n, x, y, z, yaw) in trees)}{cam}
 </world></sdf>'''

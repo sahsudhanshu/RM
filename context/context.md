@@ -222,18 +222,18 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 ### Deliverables
 | What | Where |
 |---|---|
-| **Final deck, 26 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
+| **Final deck, 28 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
 | Full 44-slide deck (backup, has the removed slides) | `presentation_final/Presentation_full_44slides.pdf`, `body_full_44slides.tex` |
 | **Presentation script** (3 speakers, per-slide teaching, demos, Q&A) | `context/presentation_script.md` |
 | 3D browser viewer (18 scenarios, open-loop vs replanning) | `implementation/viewer/index_offline.html` (works offline); notes `implementation/viewer/DEMO.md` |
 | Gazebo experiment replays (22 runs) and results | `implementation/gazebo/` (`gazebo_vs_plan.csv`, `results*/`, videos in `videos/` and `videos_terrain/`, git-ignored) |
-| **Runnable 3D Gazebo demo** (no experiments) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
+| **Runnable 3D Gazebo demo** (no experiments), incl. the **fallen-tree scenario** (`./run_tree_demo.sh`: tree falls, orange old route, green replanned route) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
 | Code, tests (35), results, README | `implementation/` (`README.md` documents every experiment) |
 
 Repository: GitHub `sahsudhanshu/RM` (branch `main`). Not in the repo (size or reproducible): `.venv`, `presentation_final/.texlocal` (local TeX, 230 MB), `*.pt` checkpoints, raw per-instance Kaggle tables, Gazebo videos/run folders.
 
-### Story of the deck (26 slides)
-Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-15: reproduce base, event-triggered replanning, learning policies, experimental design) -> results (16-21) -> Gazebo (22) -> hypotheses (23) -> conclusion and limits (24) -> future plan with a success test per hypothesis (25) -> references (26).
+### Story of the deck (28 slides)
+Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-17: reproduce base, event-triggered replanning, learning policies, **training setup and configuration (15)**, **training curves (16)**, experimental design) -> results (18-23) -> Gazebo (24) -> hypotheses (25) -> conclusion and limits (26) -> future plan with a success test per hypothesis (27) -> references (28).
 
 ### Key results (all with the numbers used in the deck)
 * Road events hurt: up to +22 % time and +29 % energy (border map, open-loop rule policy, 18 events).
@@ -254,3 +254,6 @@ open implementation/viewer/index_offline.html            # 3D viewer (any browse
 cd implementation/gazebo && unzip gazebo_demo.zip && cd demo && ./run_demo.sh     # 3D Gazebo demo (Ubuntu + gz-harmonic, desktop)
 ```
 The Gazebo machine used so far is the friend's Ubuntu 24.04 laptop (RTX 3050) over SSH; always run replays with `GZ_IP=127.0.0.1` so a Wi-Fi change cannot hang them.
+
+### Training details (also on slides 15 and 16)
+Transformer encoder (3 layers, 8 heads, d = 128, LayerNorm) + glimpse-attention decoder (clip 10), 0.73 M parameters. Fresh random instance every step (15 aerial + 5 ground tasks), 64 validation and 100 held-out test instances. 1) Imitation of the nearest-feasible rule: 800 steps (2 x 400), batch 64, Adam 1e-3 then 3e-4, clip 1.0. 2) REINFORCE (P0): 1,200 steps on mission time, batch 64, Adam 1e-4 with decay 0.995 per 20-step epoch, greedy-rollout baseline. 3) Variants: 600 steps from the same P0, lr 3e-4, leave-one-out baseline over 8 samples; P2 T + 0.3 T_ref E/B0; P3 Lagrangian (dual step 0.1, cap 8); P4 hinge weight 3 + budget input. 3 seeds per map, Kaggle CPU 4 cores, about 41 to 53 min per P0 run and about 3 h per map; last checkpoint used. Curves (`presentation_final/assets/fig_training.png`, from `results_kaggle/loop/logs` and `train_*.json`): imitation cross-entropy 1.5 -> 0.26 for seeds 0 and 1, seed 2 stays at 1.6 (the weak seed); REINFORCE validation time about 300 -> 190-220 min (noisy, 64 instances); no variant separates from the control.

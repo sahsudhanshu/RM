@@ -13,16 +13,19 @@ while riding on it and take off again. Road events appear as cones/strips at the
 import argparse, json, math, os, subprocess, sys, time
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from demo_world import world_sdf, terrain_fn, event_marker_sdf, UGV_ROOF, UAV_REST
-from gz.transport13 import Node
-from gz.msgs10.pose_v_pb2 import Pose_V
-from gz.msgs10.pose_pb2 import Pose
-from gz.msgs10.world_control_pb2 import WorldControl
-from gz.msgs10.boolean_pb2 import Boolean
-from gz.msgs10.image_pb2 import Image
-from gz.msgs10.twist_pb2 import Twist
-from gz.msgs10.entity_factory_pb2 import EntityFactory
-from gz.msgs10.entity_pb2 import Entity
+from demo_world import world_sdf, terrain_fn, event_marker_sdf, tree_sdf, route_sdf, barrier_sdf, ROAD_W, UGV_ROOF, UAV_REST
+try:
+    from gz.transport13 import Node
+    from gz.msgs10.pose_v_pb2 import Pose_V
+    from gz.msgs10.pose_pb2 import Pose
+    from gz.msgs10.world_control_pb2 import WorldControl
+    from gz.msgs10.boolean_pb2 import Boolean
+    from gz.msgs10.image_pb2 import Image
+    from gz.msgs10.twist_pb2 import Twist
+    from gz.msgs10.entity_factory_pb2 import EntityFactory
+    from gz.msgs10.entity_pb2 import Entity
+except ImportError:
+    if "--dry-run" not in sys.argv: raise
 
 ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
 ap.add_argument("plan"); ap.add_argument("--scale", type=float, default=50.0, help="space scale 1:N")
@@ -33,6 +36,10 @@ ap.add_argument("--vex", type=float, default=1.4, help="vertical exaggeration of
 ap.add_argument("--headless", action="store_true", help="no window (server only)"); ap.add_argument("--record", default="", help="headless: write an MP4 of an oblique camera")
 ap.add_argument("--max-sim", type=float, default=0.0, help="stop after this many demo seconds"); ap.add_argument("--follow", default="", help="GUI: follow a vehicle, e.g. ugv0")
 ap.add_argument("--cam", default="follow", choices=["follow", "overview"], help="recording camera: follow the first UGV or a fixed overview")
+ap.add_argument("--event-style", default="auto", choices=["auto", "tree", "strip"], help="blocked road: a tree falls across it (auto for block events) or a red strip with cones")
+ap.add_argument("--compare", default="", help="open-loop plan of the same case: its remaining UGV route is drawn in orange before the event")
+ap.add_argument("--show-event", action="store_true", help="cut the camera to the road event and the replanned route")
+ap.add_argument("--dry-run", action="store_true", help="only build the plan and the world file, validate them, and exit (no Gazebo needed)")
 ap.add_argument("--out", default="demo_out"); ap.add_argument("--no-verify", action="store_true")
 a = ap.parse_args()
 os.makedirs(a.out, exist_ok=True)
@@ -40,14 +47,17 @@ K, C = 1.0 / a.scale, a.speed
 rtf = a.rtf if a.rtf is not None else (1.0 if not a.headless else 0.0)
 
 # ---- scale the plan --------------------------------------------------------------------------------------------------
-P = json.load(open(a.plan)); P["id"] = P["id"]
+P = json.load(open(a.plan))
 sc = lambda p: [p[0] * K, p[1] * K]
-plan = dict(id=P["id"], title=P["title"], mode=P["mode"], roads=dict(xy=[sc(p) for p in P["roads"]["xy"]], edges=P["roads"]["edges"]),
-            tasks=dict(xy=[sc(p) for p in P["tasks"]["xy"]], n_ground=P["tasks"]["n_ground"], depot=sc(P["tasks"]["depot"])),
-            ugvs=[dict(id=g["id"], start=sc(g["start"]), drives=[dict(t0=d["t0"] / C, t1=d["t1"] / C, a=d["a"], b=d["b"]) for d in g["drives"]]) for g in P["ugvs"]],
-            uavs=[dict(id=u["id"], start=sc(u["start"]), legs=[dict(t0=l["t0"] / C, t1=l["t1"] / C, p0=sc(l["p0"]), p1=sc(l["p1"]), land=l["land"]) for l in u["legs"]]) for u in P["uavs"]],
-            services=[dict(uav=s["uav"], ugv=s["ugv"], touchdown=s["touchdown"] / C, start=s["start"] / C, end=s["end"] / C, node=s["node"]) for s in P["services"]],
-            event=dict(t=P["event"]["t"] / C, kind=P["event"]["kind"], edges=P["event"]["edges"]), T=P["T"] / C)
+def scale_plan(P):
+    return dict(id=P["id"], title=P["title"], mode=P["mode"], roads=dict(xy=[sc(p) for p in P["roads"]["xy"]], edges=P["roads"]["edges"]),
+                tasks=dict(xy=[sc(p) for p in P["tasks"]["xy"]], n_ground=P["tasks"]["n_ground"], depot=sc(P["tasks"]["depot"])),
+                ugvs=[dict(id=g["id"], start=sc(g["start"]), drives=[dict(t0=d["t0"] / C, t1=d["t1"] / C, a=d["a"], b=d["b"]) for d in g["drives"]]) for g in P["ugvs"]],
+                uavs=[dict(id=u["id"], start=sc(u["start"]), legs=[dict(t0=l["t0"] / C, t1=l["t1"] / C, p0=sc(l["p0"]), p1=sc(l["p1"]), land=l["land"]) for l in u["legs"]]) for u in P["uavs"]],
+                services=[dict(uav=s["uav"], ugv=s["ugv"], touchdown=s["touchdown"] / C, start=s["start"] / C, end=s["end"] / C, node=s["node"]) for s in P["services"]],
+                event=dict(t=P["event"]["t"] / C, kind=P["event"]["kind"], edges=P["event"]["edges"]), T=P["T"] / C)
+plan = scale_plan(P)
+cmp_plan = scale_plan(json.load(open(a.compare))) if a.compare else None
 terrain = None
 if a.terrain:
     td = os.path.abspath(a.terrain); info = json.load(open(os.path.join(td, "info.json")))
@@ -62,7 +72,22 @@ cam_d, cam_h = span * 0.80, span * 0.55; cam_pitch = math.atan2(cam_h, cam_d)
 cam = (cx, cy - cam_d, cam_h + (terrain["relief"] if terrain else 0.0), cam_pitch, math.pi / 2)
 name = "".join(ch if ch.isalnum() or ch in "-_" else "_" for ch in plan["id"])
 world_path = os.path.abspath(os.path.join(a.out, name + ".sdf"))
-open(world_path, "w").write(world_sdf(plan, terrain, record_cam=cam if a.record else None))
+ev = plan["event"]
+tree_style = a.event_style == "tree" or (a.event_style == "auto" and ev["kind"] == "block")
+trees, tree_info = [], []                 # standing trees beside every blocked road; they fall across it at the event time
+if tree_style:
+    for i, e in enumerate(ev["edges"]):
+        p, q = xy[plan["roads"]["edges"][e][0]], xy[plan["roads"]["edges"][e][1]]
+        L = math.hypot(q[0] - p[0], q[1] - p[1]); ux, uy = (q[0] - p[0]) / L, (q[1] - p[1]) / L; nx, ny = -uy, ux; mx, my = (p[0] + q[0]) / 2, (p[1] + q[1]) / 2
+        bx, by = mx + nx * (ROAD_W / 2 + 3.5), my + ny * (ROAD_W / 2 + 3.5); yaw = math.atan2(-ny, -nx)
+        trees.append((f"tree{i}", bx, by, gzh(bx, by), yaw)); tree_info.append(dict(name=f"tree{i}", x=bx, y=by, z=gzh(bx, by), yaw=yaw, mid=(mx, my), u=(ux, uy), p=p, q=q))
+open(world_path, "w").write(world_sdf(plan, terrain, record_cam=cam if a.record else None, trees=trees))
+if a.dry_run:
+    import xml.dom.minidom as _md
+    _md.parse(world_path)
+    print(f"dry run ok: world file {world_path} is valid XML ({os.path.getsize(world_path) // 1024} KB); trees: {[t[0] for t in trees]}; event {ev['kind']} on edges {ev['edges']} at demo t = {ev['t']:.1f} s; style = {'tree' if tree_style else 'strip'}")
+    if cmp_plan: print(f"  orange (open-loop) route segments after the event: {len(set(frozenset((dr['a'], dr['b'])) for g in cmp_plan['ugvs'] for dr in g['drives'] if dr['t1'] > ev['t']))}; green (replanned): {len(set(frozenset((dr['a'], dr['b'])) for g in plan['ugvs'] for dr in g['drives'] if dr['t1'] > ev['t']))}")
+    sys.exit(0)
 print(f"plan: {plan['title']} [{plan['mode']}]  demo duration ~{plan['T']:.0f} s  (space 1:{a.scale:.0f}, time x{C:.0f})", flush=True)
 
 # ---- start Gazebo --------------------------------------------------------------------------------------------------------
@@ -99,9 +124,9 @@ while not (all(f"ugv{g['id']}" in poses for g in plan["ugvs"]) and all(f"uav{u['
     time.sleep(0.5)
 time.sleep(1.0)
 
-def set_gui_camera():
+def set_gui_camera(pose=None, follow=None):
     from gz.msgs10.gui_camera_pb2 import GUICamera
-    x, y, z, pitch, yaw = cam
+    x, y, z, pitch, yaw = pose or cam
     g = GUICamera(); g.name = "gzclient_camera"; g.pose.position.x, g.pose.position.y, g.pose.position.z = x, y, z
     cp, sp_, cy_, sy_ = math.cos(pitch / 2), math.sin(pitch / 2), math.cos(yaw / 2), math.sin(yaw / 2)
     g.pose.orientation.w, g.pose.orientation.x, g.pose.orientation.y, g.pose.orientation.z = cp * cy_, -sp_ * sy_, sp_ * cy_, cp * sy_
@@ -109,9 +134,11 @@ def set_gui_camera():
         ok = node.request("/gui/move_to/pose", g, GUICamera, Boolean, 1000)
         if ok[0] and ok[1].data: break
         time.sleep(1.0)
-    if a.follow:
+    print("  gui camera move:", "ok" if (ok[0] and ok[1].data) else "failed", flush=True)
+    fol = a.follow if follow is None else follow
+    if fol or follow == "":
         from gz.msgs10.stringmsg_pb2 import StringMsg
-        s = StringMsg(); s.data = a.follow; node.request("/gui/follow", s, StringMsg, Boolean, 1000)
+        s = StringMsg(); s.data = fol; node.request("/gui/follow", s, StringMsg, Boolean, 1000)
 if not a.headless: set_gui_camera()
 
 # ---- controllers ------------------------------------------------------------------------------------------------------------
@@ -186,11 +213,51 @@ def uav_tick(uid, st, t):
             if ready and t >= ugvs[g].get("free_at_svc", 0.0):
                 st["svc_end"] = t + (s["end"] - s["start"]); st["mode"] = "charge"; st["ride"] = g; ugvs[g]["free_at_svc"] = st["svc_end"]; qpos[g] += 1
         return
-ev = plan["event"]; ev_done = False
-def spawn_event():
-    for i, e in enumerate(ev["edges"]):
-        p, q = xy[plan["roads"]["edges"][e][0]], xy[plan["roads"]["edges"][e][1]]
-        create(event_marker_sdf(f"event{i}", p[0], p[1], q[0], q[1], (gzh(*p) + gzh(*q)) / 2, ev["kind"]))
+ev_state = dict(old=False, fall=False, barrier=False, new=False, cut=False, back=False)
+def route_segments(pl, t_from):
+    seen, segs = set(), []
+    for g in pl["ugvs"]:
+        for dr in g["drives"]:
+            key = frozenset((dr["a"], dr["b"]))
+            if dr["t1"] > t_from and key not in seen:
+                seen.add(key); p, q = xy[dr["a"]], xy[dr["b"]]; segs.append((p[0], p[1], q[0], q[1], gzh(*p) + 0.4, gzh(*q) + 0.4))
+    return segs
+def event_view():
+    if tree_info: ti = tree_info[0]; mx, my = ti["mid"]; ux, uy = ti["u"]
+    else: mx, my = (cx, cy); ux, uy = 1.0, 0.0
+    return (mx - ux * 34, my - uy * 34, gzh(mx, my) + 15, 0.36, math.atan2(uy, ux))
+def event_tick(t):
+    te = ev["t"]
+    if a.show_event and not ev_state["cut"] and t >= te - 3.0:
+        ev_state["cut"] = True
+        if not a.headless: set_gui_camera(event_view(), follow="")
+    if cmp_plan and not ev_state["old"] and t >= te - 4.0:
+        ev_state["old"] = True; create(route_sdf("route_old", route_segments(cmp_plan, te), "1.0 0.55 0.0 1", 0.0, width=2.8)); print("  original (open-loop) route shown in orange", flush=True)
+    if not ev_state["fall"] and t >= te:
+        ev_state["fall"] = True
+        if not tree_style:
+            for i, e in enumerate(ev["edges"]):
+                p, q = xy[plan["roads"]["edges"][e][0]], xy[plan["roads"]["edges"][e][1]]
+                create(event_marker_sdf(f"event{i}", p[0], p[1], q[0], q[1], (gzh(*p) + gzh(*q)) / 2, ev["kind"]))
+        print("  road event: " + ("a tree falls across the road" if tree_style else ev["kind"] + " road"), flush=True)
+    if tree_style and te <= t <= te + 2.6:
+        tau = min(1.0, (t - te) / 2.4); tilt = (math.pi / 2 - 0.02) * tau * tau
+        for ti in tree_info: set_pose(ti["name"], ti["x"], ti["y"], ti["z"] + 0.55 * tau, ti["yaw"], tilt)
+    if tree_style and not ev_state["barrier"] and t >= te + 2.6:
+        ev_state["barrier"] = True
+        for i, ti in enumerate(tree_info):
+            for k, (px, py) in enumerate((ti["p"], ti["q"])):
+                ux, uy = ti["u"]
+                L = math.hypot(ti["q"][0] - ti["p"][0], ti["q"][1] - ti["p"][1]); bx, by = ti["mid"][0] + (-ux if k == 0 else ux) * (L / 2 - 6.0), ti["mid"][1] + (-uy if k == 0 else uy) * (L / 2 - 6.0)
+                create(barrier_sdf(f"barrier{i}_{k}", bx, by, gzh(bx, by), math.atan2(uy, ux) + math.pi / 2))
+    if not ev_state["new"] and t >= te + 4.0:
+        ev_state["new"] = True
+        create(route_sdf("route_new", route_segments(plan, te), "0.10 0.85 0.30 1", 0.12, width=1.3)); print("  replanned route shown in green (orange-only roads are no longer used)", flush=True)
+    if a.show_event and ev_state["cut"] and not ev_state["back"] and t >= te + 14.0:
+        ev_state["back"] = True
+        if not a.headless: set_gui_camera(cam)
+    return a.show_event and ev_state["cut"] and not ev_state["back"]
+cut_active = False
 
 # ---- video (headless) ---------------------------------------------------------------------------------------------------------
 ff = None
@@ -206,9 +273,11 @@ print("running; close the Gazebo window or press Ctrl+C to stop" if not a.headle
 try:
     while t < horizon and server.poll() is None:
         t_next = t + dt
-        if not ev_done and t >= ev["t"]: spawn_event(); ev_done = True
+        cut_active = event_tick(t)
         for g, st in ugvs.items(): ugv_tick(g, st, t)
-        if a.record and a.cam == "follow":
+        if a.record and cut_active:
+            vx, vy, vz, vp, vyaw = event_view(); set_pose("rec_cam", vx, vy, vz, vyaw, vp)
+        elif a.record and a.cam == "follow":
             fx, fy, fz, fyaw = poses[f"ugv{plan['ugvs'][0]['id']}"]; set_pose("rec_cam", fx - 24 * math.cos(fyaw), fy - 24 * math.sin(fyaw), fz + 12, fyaw, 0.42)
         for uid, st in uavs.items(): uav_tick(uid, st, t)
         step(nsteps)

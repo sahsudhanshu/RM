@@ -1,15 +1,15 @@
 # End-Semester Presentation: Script, Teaching Notes and Demo Plan
 
-Deck: `presentation_final/Presentation.pdf` (26 slides). Full 44-slide version for backup: `presentation_final/Presentation_full_44slides.pdf`.
+Deck: `presentation_final/Presentation.pdf` (28 slides). Full 44-slide version for backup: `presentation_final/Presentation_full_44slides.pdf`.
 Three presenters (the three authors on the title slide). Assign names as you like: **Speaker 1, Speaker 2, Speaker 3**.
 
 | Part | Speaker | Slides | Theme | Demo | Time |
 |---|---|---|---|---|---|
 | 1 | Speaker 1 | 1 to 8 | The problem, the intuition, the literature and our questions | **Demo 1** (3D viewer: "the problem") after slide 4 | about 10 min |
-| 2 | Speaker 2 | 9 to 16 | Before mid-sem, its limits, and what we built | **Demo 2** (3D viewer: "replanning at work, honestly") after slide 13 | about 11 min |
-| 3 | Speaker 3 | 17 to 26 | The results, Gazebo, conclusion, future plan | **Demo 3** (Gazebo videos) after slide 22 | about 13 min |
+| 2 | Speaker 2 | 9 to 18 | Before mid-sem, its limits, what we built and how we trained it | **Demo 2** (3D viewer, then the Gazebo fallen-tree clip) after slide 13 | about 13 min |
+| 3 | Speaker 3 | 19 to 28 | The results, Gazebo, conclusion, future plan | **Demo 3** (Gazebo videos) after slide 24 | about 13 min |
 
-Total about 34 min including demos. **If you only have 20 min**, use the cut list in section 6.
+Total about 36 min including demos. **If you only have 20 min**, use the cut list in section 6.
 
 ---
 
@@ -136,12 +136,12 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - **RQ2 Can we stay within a budget?** H2: a constrained method beats a fixed penalty.
 - **RQ3 What do blockages do?** H3: more disruption means more energy.
 - **RQ4 Event-triggered vs periodic replanning?** H4: same reliability, fewer replans.
-- We will come back to these four hypotheses in the scorecard slide (23); two are confirmed, one is rejected and one is partly true.
+- We will come back to these four hypotheses in the scorecard slide (25); two are confirmed, one is rejected and one is partly true.
 **Say:** "From the gap we ask four questions with four hypotheses. First, is there a time-energy trade-off, that is, can we spend a little more time to save a lot of energy? Second, can a constrained method keep us within the budget better than a fixed penalty? Third, how much do blockages cost? Fourth, can we replan only when needed, instead of regularly? I will hand over to my teammate, who will show what we did before mid-sem and what we built since."
 
 ---
 
-# PART 2: What we built (Speaker 2, slides 9 to 16)
+# PART 2: What we built and how we trained it (Speaker 2, slides 9 to 18)
 
 ## Slide 9: Before mid-sem: what we did (45 s)
 **On screen:** flow: studied the base paper, found its limits, formalised min T s.t. E ≤ B, road/energy/budget models, candidate methods A and B, replanning design; below: experimental plan (policies P0 to P4, stages A, B, C) and the Gazebo testbed started (desert terrain, 4-wheel UGV).
@@ -156,7 +156,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - **Candidate A (Lagrangian):** train with cost T + λ·max(0, E − B): penalise energy only above the budget, with λ learned.
 - **Candidate B (budget-conditioned):** give the decoder the remaining budget b_t = (B − E_t)/B as an input so it can adapt to the budget.
 **Say:** "Our framework keeps the base paper's encoder, its greedy assignment and the simulator. We add a road layer that updates the road graph when an event happens, and masks that remove choices which are no longer reachable or on time. We proposed two ways to make the policy energy-aware: A adds a Lagrangian penalty for exceeding the budget; B feeds the remaining budget to the decoder."
-**Remember:** these are the two methods that later turn out to be no better than the control (slide 18, 23).
+**Remember:** these are the two methods that later turn out to be no better than the control (slide 20, 25).
 
 ## Slide 11: Challenges and limits before mid-sem and what we did about them (1 min)
 **On screen:** six rows, before mid-sem (red) leading to after mid-sem (teal).
@@ -174,7 +174,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 **Teach:**
 - To trust any later result we first **reproduce the base paper** on its own road map (rebuilt from the authors' code).
 - Our trained greedy policy is **within about 10%** of the paper's greedy DRL for three of the four teams (1U-1G 228 vs 238 min, 2U-1G 210 vs 230, 2U-2G 185 vs 181).
-- **4U-2G is 9 to 14% slower** than the paper, even after 3000 more training steps, over 3 seeds. We say this plainly; sampling closes it later (slide 21).
+- **4U-2G is 9 to 14% slower** than the paper, even after 3000 more training steps, over 3 seeds. We say this plainly; sampling closes it later (slide 23).
 **Say:** "Step one is to check we can reproduce the base paper. On its own map, our greedy policy is within about ten percent for three of four team sizes. For four drones and two trucks we are still nine to fourteen percent slower, and more training did not fix it. We report this honestly."
 **If asked why the gap:** the 4U-2G policy has more coordination to learn and we trained on free CPUs for a few hours; the paper's training is much larger.
 
@@ -193,6 +193,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 2. **Honest worst case:** choose **Border surveillance, block edges, medium, middle, worst case**. **Say:** "Replanning is not always better. Here replanning made this instance about 48 minutes slower than open-loop. Averaged over the test instances it still wins clearly, and we report cases like this one instead of hiding them."
 3. **Cut road:** choose **cut road (stress test)** on the border or ring-road map. **Say:** "If a bridge is cut and the map is disconnected, open-loop fails and the mission is never completed. Replanning rescues some missions, but not all, because some UAVs have already committed their last battery."
 4. Switch to **Top** view briefly to show the border strip and roads if time allows.
+5. **Gazebo fallen tree (30 to 40 s):** play `implementation/gazebo/demo_preview_tree_border.mp4` (or `demo_preview_tree_loop.mp4`). **Say:** "Same idea, now in Gazebo. A tree stands beside the road. It falls across it and the road is blocked; the orange line is the route we were going to take. The planner updates its road map and replans: the green line is the new route, and the truck takes the detour."
 
 ## Slide 14: Step 3: Learning the policies (1 min 15 s)
 **On screen:** pipeline: clone the rule policy (imitation), REINFORCE on time = P0, fan-out to P0+ control, P2 fixed penalty, P3 (A) Lagrangian, P4 (B) budget input; dashed to P1 (at inference): sample N routes, keep the fastest with E ≤ B; caption on Transformer, attention model and REINFORCE.
@@ -205,7 +206,28 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 **Say:** "We train a base policy by imitating a rule and then using REINFORCE on mission time. Every other variant starts from this same policy, so differences come from the method. The control is the same policy trained for the same extra steps without any energy term. P1 is different: it needs no training; at decision time it samples many routes and keeps the fastest one that fits the budget."
 **Why the control matters:** a method counts as a success only if it beats P0+, not just P0.
 
-## Slide 15: Step 4: Experimental design (45 s)
+## Slide 15: Training setup and configuration (1 min)
+**On screen:** a table: policy network, instances, 1. imitation, 2. REINFORCE (P0), 3. variants, seeds and compute.
+**Teach (this slide answers "how exactly did you train it?"):**
+- **Policy network:** the base paper's Transformer: encoder with 3 layers, 8 heads, width d = 128, LayerNorm; glimpse-attention decoder with scores clipped at C = 10; **0.73 million parameters**. We add two dynamic geometry features per action (used by the road-aware masks).
+- **Instances:** 15 aerial and 5 ground tasks, team 2U-1G (we also trained 1U-1G, 2U-2G and 4U-2G). **A new random instance is generated at every training step**, so there is no fixed training set to overfit. Validation: 64 instances; test: 100 held-out instances.
+- **Stage 1, imitation:** copy the simple nearest-feasible rule, 800 steps (2 times 400), batch 64, Adam with learning rate 1e-3 then 3e-4, gradient clipping 1.0. This gives a sensible warm start, so REINFORCE does not begin from random behaviour.
+- **Stage 2, REINFORCE (P0):** 1,200 steps minimising mission time, batch 64, Adam with learning rate 1e-4 decayed by 0.995 every 20-step epoch, with a **greedy-rollout baseline** refreshed every epoch (Williams' REINFORCE with the baseline of the base paper).
+- **Stage 3, variants:** 600 more steps from the same P0, learning rate 3e-4, a leave-one-out baseline over 8 sampled routes per instance. P2 (fixed penalty): T + 0.3 T_ref E/B0. P3 (A, Lagrangian): T + lambda T_ref (E - B)+/B0 with dual step 0.1 and cap 8. P4 (B): hinge weight 3 and the remaining budget as decoder input.
+- **Seeds and compute:** 3 seeds per map (separate imitation and training runs). Everything trained on Kaggle CPUs (4 cores, about 3 hours per map including all variants; the P0 REINFORCE run alone is 41 to 53 minutes per seed). **The last checkpoint is used, with no best-checkpoint selection**, so nothing is cherry-picked.
+**Say:** "Here is exactly how we trained. The network is the base paper's Transformer, about 0.7 million parameters. We first imitate a simple rule for 800 steps to get a sensible start, then train with REINFORCE on mission time for 1,200 steps with a greedy-rollout baseline. Every variant, the control, the fixed penalty, the Lagrangian and the budget input, starts from the same trained policy and gets 600 more steps, so differences come from the method. Every step uses a fresh random instance, we train three seeds per map on Kaggle CPUs, and we use the last checkpoint, with no cherry-picking."
+**If asked "why so few steps?":** free CPU compute (about 3 hours per map); the validation curve is flat by about 600 steps, and doubling the steps for 4U-2G did not help.
+
+## Slide 16: Training curves (1 min)
+**On screen:** three panels for the ring-road map, team 2U-1G, 3 seeds: (1) imitation cross-entropy per decision, (2) validation mission time during REINFORCE, (3) validation mission time of the fine-tuning variants.
+**Teach (how to read each panel):**
+1. **Imitation:** the cross-entropy per decision falls from about 1.5 to **0.26 for seeds 0 and 1** within 800 steps. **Seed 2 stays at about 1.6** even with extra imitation rounds: it never copies the rule, and this is the **weak seed** that later loops in some instances (a fallback to the rule policy removes its failures but it stays about 2 times slower).
+2. **REINFORCE:** validation time of the greedy policy falls from about 300 to **190 to 220 minutes**. The curve is noisy because it is measured on only 64 validation instances; the improvement is steady, then flattens.
+3. **Variants:** the control (P0+), the fixed penalty (P2), the Lagrangian (A) and the budget input (B) all move within the same band; **no variant separates from the control**. This is the training-time view of Result 3 (no trade-off to learn at route level) and of the rejected H2.
+**Say:** "These are the training curves. On the left, imitation: two seeds learn the rule well, the cross-entropy drops to 0.26; the third seed never does, and that is the weak seed we see later. In the middle, REINFORCE brings the validation time from about 300 to between 190 and 220 minutes; it is noisy, because we validate on 64 instances. On the right, the four fine-tuning variants all stay in the same band as the control. That matches our finding that there is no trade-off for the energy-aware methods to learn."
+**If asked "why is the curve noisy?":** 64 validation instances and a stochastic training signal; we report test results on 100 held-out instances with confidence intervals over seeds, not these curves.
+
+## Slide 17: Step 4: Experimental design (45 s)
 **On screen:** six maps (base paper's tree, ring road, city grid, radial town, irregular district, border surveillance); chips: 4 maps and 4 team sizes, 3 training seeds, 100 test instances, 18 road events, Kaggle CPU about 3 h per map; the 18 events = {blocked, slow} × {low, medium, high} × {early, middle, late}.
 **Teach:**
 - Squares are ground points, circles are aerial tasks; the shaded strip and dashed line in the border map is the surveillance zone.
@@ -214,7 +236,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - Four maps are used for the main results: ring road, border, district (geo) and the paper's map.
 **Say:** "We evaluate on several maps, including the base paper's map and a border-surveillance map. Every setting uses 100 test instances and 18 kinds of road events: blocked or slow, three severities, three timings. We train three seeds per map to see how stable the results are. Training ran on free Kaggle CPUs."
 
-## Slide 16: Result 1: Road events really hurt (45 s), then HAND OVER
+## Slide 18: Result 1: Road events really hurt (45 s), then HAND OVER
 **On screen:** bars per map: increase of mission time and UAV energy versus static roads for an open-loop mission (rule policy, 18 events).
 **Teach (read the bars):**
 - Radial: +4% time, +6% energy. Paper map: +6%, +8%. Grid: +7%, +9%. District: +12%, +15%. Ring road: +13%, +19%. **Border: +22% time, +29% energy**.
@@ -224,9 +246,9 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 
 ---
 
-# PART 3: Results, Gazebo, conclusion, future plan (Speaker 3, slides 17 to 26)
+# PART 3: Results, Gazebo, conclusion, future plan (Speaker 3, slides 19 to 28)
 
-## Slide 17: Result 2: Replanning recovers time and energy, with few replans (1 min)
+## Slide 19: Result 2: Replanning recovers time and energy, with few replans (1 min)
 **On screen:** left: change in mission time (min) per map for event-triggered vs open-loop, one dot per training seed, line = median; right: change in UAV energy (kJ).
 **Teach:**
 - Every dot below zero means replanning saved time or energy compared with open-loop. All **12 map-seed combinations** are below zero.
@@ -235,7 +257,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - Honesty: some individual instances are worse (we showed one in Demo 2); the claim is on averages.
 **Say:** "Replanning helps. In all twelve map and seed combinations it beats open-loop, saving fifteen to forty-one minutes and hundreds of kilojoules. And replanning only when needed gives the same mission time as replanning after every recharge, with one to three fewer replans."
 
-## Slide 18: Result 3: Why the energy methods have so little to gain (1 min 30 s)
+## Slide 20: Result 3: Why the energy methods have so little to gain (1 min 30 s)
 **On screen:** left bars: correlation between time and energy over sampled routes (hover as modelled 0.96, hover at 0.5× 0.97, hover at 0.25× 0.90, landed i.e. free waiting 0.39); right bars: extra time and energy saved by an energy-aware route versus the fastest; chain: hover waiting is about half of E, faster routes wait less, fastest is about the lowest-energy route, no trade-off to learn (H1).
 **Teach (this is the key insight for the "energy budget" idea):**
 - The mid-sem idea: "spend a little more time and save a lot of energy." For that, a **lower-energy route must exist that is only slightly slower**.
@@ -245,7 +267,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 **Say:** "Here is why our energy-aware methods had little to gain. We asked: is there a slightly slower route that uses much less energy? The answer is no. Time and energy are correlated at 0.96. Hovering is about half of the energy, and a faster route hovers less. So the fastest route is nearly the lowest-energy route. There is no trade-off for a policy to learn at the route level. This is a negative result, and it is an important one: it tells us where the energy actually goes."
 **If asked "so the mid-sem idea failed?":** "At the level of choosing routes, yes. The energy is saved by changing **when** UAVs take off, which is the next slide."
 
-## Slide 19: Result 4: A lever that realises the idea (1 min 30 s)
+## Slide 21: Result 4: A lever that realises the idea (1 min 30 s)
 **On screen:** three timelines (Before, After, UGV) with markers "UGV arrives: same moment in both"; flow: UAV expects to arrive before the UGV, delay take-off by the expected wait, arrives as the UGV arrives (no hovering), same mission time, far less energy; assumption note.
 **Teach (read the timelines):**
 - **Before:** the UAV flies, arrives early and **hovers** (orange) until the UGV arrives, then charges.
@@ -257,7 +279,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 **Say:** "The energy is in the waiting, so we attack the waiting. In just-in-time departure, a drone that expects to wait delays its take-off and waits on the ground, where it costs nothing, instead of hovering in the air. It arrives as the truck arrives. The truck's arrival time is unchanged, so mission time is unchanged, but the hover energy disappears. This saves fifty-three to seventy-four percent of the drone energy at no cost in time. The assumption is that a drone can wait on the ground for free, and that its wait can be predicted from the road state it knows."
 **If asked "is this realistic?":** it needs the UAV to idle without battery loss and decent UGV-arrival prediction; road events mid-flight cannot be predicted, so 11 to 36% of the waiting remains after events (re-predicting at take-off removes two thirds of that: hover energy 241 to 80 kJ).
 
-## Slide 20: Result 5: Sampling and just-in-time together (1 min 15 s)
+## Slide 22: Result 5: Sampling and just-in-time together (1 min 15 s)
 **On screen:** three panels (mission time, UAV energy, share over the 0.9 budget), each with static roads and road events, four bars: base policy, + just-in-time, sampling + budget filter, both.
 **Teach (read per panel, static roads):**
 - **Time:** base 228 min; JIT 228 (unchanged); sampling + budget filter (P1, 64 samples) **183**; both 182. So **sampling makes it about 20% faster**.
@@ -269,7 +291,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 **Say:** "Putting the two levers together. Sampling many routes and keeping the fastest one within the budget cuts mission time by about twenty percent. Just-in-time departure cuts drone energy by about sixty-five percent. Together the gains add up: the mission is about twenty percent faster, uses sixty-five percent less energy, and meets the budget, with zero percent violations on static roads and two percent with events."
 **If asked "why does sampling help and not training?":** we tried training a policy to imitate the best sampled routes (search distillation), but it did not help in our setting, so we keep sampling as a decision-time search.
 
-## Slide 21: Result 6: Baselines and sampled decoding on the paper's map (1 min)
+## Slide 23: Result 6: Baselines and sampled decoding on the paper's map (1 min)
 **On screen:** left: GLS baseline, paper vs ours, per team; right: greedy vs sampled: paper greedy, ours greedy, paper 10,240 samples, ours best of 10,240.
 **Teach:**
 - **Left:** our re-implementation of the bilevel heuristic "UGV first, UAV second" with OR-Tools (GLS, Tabu, SA) lands **in the paper's range** (close for 1U-1G, ±10 to 20% otherwise). It shows our simulator is comparable to the paper's.
@@ -277,7 +299,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - Honesty: our map and instances are **reconstructions**, so this is **not a claim to beat the paper**.
 **Say:** "For comparison with the base paper: our re-implementation of the bilevel heuristic lands in the paper's range. With the same sampled decoding the paper uses, our policy reaches lower times than the paper reports, which also closes the gap we saw for four drones. But our map and instances are reconstructed, so we do not claim to beat the paper."
 
-## Slide 22: Gazebo test bed: do the plans hold up in physics? (1 min)
+## Slide 24: Gazebo test bed: do the plans hold up in physics? (1 min)
 **On screen:** flow: planned mission, world with roads/tasks/events, wheeled UGV + flying UAV + lock-step replay, compare time/energy/UGV timing; two stills: flat ground (border map) and real terrain; summary box.
 **Teach:**
 - We take a plan from our simulator, build a **Gazebo** world (roads, tasks, events), and replay it with a **wheeled UGV with contact physics** and **UAVs flying the planned legs**. A UAV is served only after the UGV has **actually arrived**, so physical delays propagate.
@@ -290,9 +312,10 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 1. **Gazebo replay video (flat ground):** play `implementation/gazebo/videos/border-block-medium-middle-best_case__event.mp4` (28 s, 400× speed). **Say:** "This is the plan replayed in Gazebo. The title shows the plan time. The road event appears as a red strip."
 2. **Real terrain:** play `videos_terrain/border-block-medium-middle-typical_case__event.mp4`. **Say:** "The same kind of mission on real desert terrain from elevation data: the truck follows the road over hills, with the same timing within a fraction of a percent."
 3. **Close-up 3D demo:** play `demo_preview_gazebo_window.mp4` (or `demo_preview_flat.mp4`). **Say:** "And a close-up of the runnable 3D demo: the truck with its landing pad, a quadrotor landing on the roof, charging while riding along, then taking off again. We provide this as a one-command Gazebo demo (`./run_demo.sh`)."
-4. If the live Gazebo window is available on the machine, run it; otherwise use the recorded videos (safer).
+4. **Optional, live:** on the Gazebo machine `./run_tree_demo.sh border` plays the fallen-tree scenario in the Gazebo window (the camera cuts to the event, then back). Use the recorded video if anything is not perfect.
+5. If the live Gazebo window is available on the machine, run it; otherwise use the recorded videos (safer).
 
-## Slide 23: Did the hypotheses hold? (1 min)
+## Slide 25: Did the hypotheses hold? (1 min)
 **On screen:** table H1 to H4 with partial, rejected, confirmed, confirmed.
 **Teach, one row at a time:**
 - **H1 (energy falls, time barely rises): partly.** Rejected for choosing routes (time and energy move together); **confirmed for departure timing**: −53 to −74% energy at +0 minutes.
@@ -302,13 +325,13 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - Footnote: failures appear only when a bridge is cut and the map is disconnected.
 **Say:** "Scorecard. Hypothesis one is partly true: not for choosing routes, but yes for departure timing. Hypothesis two is rejected: our two energy-aware methods did not beat a control trained the same way. Hypotheses three and four are confirmed. Rejecting a hypothesis taught us where the energy really goes, which led to just-in-time departure."
 
-## Slide 24: Conclusion and limitations (1 min 30 s)
+## Slide 26: Conclusion and limitations (1 min 30 s)
 **On screen:** left "What we showed", right "Limitations and next steps".
 **Say (left):** "We showed four things: road events cost up to twenty-nine percent more energy; event-triggered replanning recovers it with few replans; just-in-time departure cuts drone energy by fifty-three to seventy-four percent at no cost in time; and with sampling and a budget filter we get about twenty percent less time and sixty-five percent less energy with the budget met. Gazebo reproduces the plans to within 0.14 percent in time."
 **Say (right, honest):** "The limitations: our learned energy-aware methods A and B did not beat the control; the four-drone policy is nine to fourteen percent slower than the paper in greedy mode, and more training did not help, search does; we replan only at recharge boundaries and there is one bad training seed that a fallback fixes in terms of failures but not speed; and Gazebo replays plans only, so running the policy and the replanner inside Gazebo is the next step."
 **Next:** "To finish, here is what we will do next."
 
-## Slide 25: Future plan: improving the method and proving the hypotheses (1 min)
+## Slide 27: Future plan: improving the method and proving the hypotheses (1 min)
 **On screen:** a table with three columns: open point, what we will implement, proved if.
 **Teach (one row at a time; each row ends in a test that says when the hypothesis counts as proved):**
 1. **H1 is only partly true**, because the 53 to 74% saving relies on UAVs waiting on the ground for free. **Plan:** add a standby energy on the ground and UGV-arrival prediction errors to the simulator, and learn the departure delay instead of using the rule. **Proved if:** the saving stays above 40% at +0 minutes even when ground standby costs 10 to 20% of the hover power.
@@ -319,8 +342,8 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 - Bottom line: H3 and H4 are confirmed; the plan is to prove H1 and H2 under realistic assumptions and to close the loop in Gazebo.
 **Say:** "Looking ahead, each open point has a concrete plan and a test that says when it counts as proved. For the first hypothesis we will make the assumptions realistic, with standby energy on the ground and prediction errors, and learn the departure delay. For the second, we will move the learning to where the energy is: departure timing and the assignment of drones to trucks. We will also work on the four-drone gap, run the policy and replanner inside Gazebo, and handle cut bridges with mid-round replanning and a fuel reserve. Thank you; we are happy to take questions."
 
-## Slide 26: References
-Keep on screen during questions (or return to slide 23 or 25 if asked about hypotheses or future work). Numbering follows first citation (IEEE). [1] is the base paper (Mondal et al., arXiv:2504.21111); [10] is the authors' code; [9] is Gazebo (Koenig and Howard).
+## Slide 28: References
+Keep on screen during questions (or return to slide 25 or 27 if asked about hypotheses or future work). Numbering follows first citation (IEEE). [1] is the base paper (Mondal et al., arXiv:2504.21111); [10] is the authors' code; [9] is Gazebo (Koenig and Howard).
 
 ---
 
@@ -343,6 +366,10 @@ Keep on screen during questions (or return to slide 23 or 25 if asked about hypo
 | Why a Transformer policy? | It is the base paper's model; we keep its encoder unchanged and change the decoder input/masks only. |
 | What is "landed waiting" in the energy-correlation slide? | A variant where waiting costs no energy (the UAV waits on the ground). It lowers the correlation between time and energy to 0.39, which is why JIT, which creates exactly that, works. |
 | Did you use Google Earth for the terrain? | No: Google Earth data cannot be downloaded programmatically. We used open SRTM-derived elevation data for a Thar-desert area. |
+| How exactly did you train it? How long did it take? | Imitation (800 steps) then REINFORCE (1,200 steps, batch 64, Adam 1e-4, greedy-rollout baseline), 0.73 M-parameter Transformer, a fresh random instance each step; 600 more steps for each variant. About 41 to 53 minutes per seed for P0 and about 3 hours per map including variants, on Kaggle CPUs. |
+| Why imitation first? | It gives a sensible warm start; REINFORCE from random behaviour is slow and unstable on this problem. The weak seed is exactly the one where imitation did not converge (cross-entropy stays at 1.6). |
+| Did you pick the best checkpoint? | No. We use the last checkpoint of every run and report all three seeds. |
+| Why are your training curves noisy? | Validation uses 64 instances and the signal is stochastic; the headline results use 100 held-out test instances and confidence intervals over seeds. |
 | What would you do next? | Run the policy and replanner inside Gazebo, replan mid-round, add a fuel reserve for stranded UAVs, longer training or a larger model for 4U-2G, and test just-in-time departure with realistic UAV standby energy. |
 
 ---
@@ -351,21 +378,22 @@ Keep on screen during questions (or return to slide 23 or 25 if asked about hypo
 
 | Slide | Time | Slide | Time | Slide | Time |
 |---|---|---|---|---|---|
-| 1 Title | 0:30 | 10 Framework | 1:15 | 19 Lever (JIT) | 1:30 |
-| 2 Problem | 1:00 | 11 Limits to actions | 1:00 | 20 Sampling + JIT | 1:15 |
-| 3 Sortie | 1:00 | 12 Reproduce base | 1:00 | 21 Baselines | 1:00 |
-| 4 Roads change | 1:00 | 13 Replanning | 1:15 | 22 Gazebo | 1:00 |
-| **Demo 1** | 1:30 | **Demo 2** | 2:00 | **Demo 3** | 2:30 |
-| 5 Problem statement | 1:00 | 14 Policies | 1:15 | 23 Hypotheses | 1:00 |
-| 6 Literature | 1:15 | 15 Experiments | 0:45 | 24 Conclusion | 1:30 |
-| 7 Gap | 0:45 | 16 Result 1 | 0:45 | 25 Future plan | 1:00 |
-| 8 Questions | 1:00 | 17 Result 2 | 1:00 | 26 References | (Q&A) |
-| | | 18 Result 3 | 1:30 | | |
-| **Part 1 total** | about 10 min | **Part 2 total** | about 11 min | **Part 3 total** | about 13 min |
+| 1 Title | 0:30 | 10 Framework | 1:15 | 19 Result 2 Replanning | 1:00 |
+| 2 Problem | 1:00 | 11 Limits to actions | 1:00 | 20 Result 3 No trade-off | 1:30 |
+| 3 Sortie | 1:00 | 12 Reproduce base | 1:00 | 21 Result 4 Lever (JIT) | 1:30 |
+| 4 Roads change | 1:00 | 13 Replanning | 1:15 | 22 Result 5 Sampling + JIT | 1:15 |
+| **Demo 1** | 1:30 | **Demo 2 (viewer + tree)** | 2:30 | 23 Result 6 Baselines | 1:00 |
+| 5 Problem statement | 1:00 | 14 Policies | 1:15 | 24 Gazebo | 1:00 |
+| 6 Literature | 1:15 | 15 Training setup | 1:00 | **Demo 3 (Gazebo)** | 2:30 |
+| 7 Gap | 0:45 | 16 Training curves | 1:00 | 25 Hypotheses | 1:00 |
+| 8 Questions | 1:00 | 17 Experiments | 0:45 | 26 Conclusion | 1:30 |
+| | | 18 Result 1 | 0:45 | 27 Future plan | 1:00 |
+| | | | | 28 References | (Q&A) |
+| **Part 1 total** | about 10 min | **Part 2 total** | about 13 min | **Part 3 total** | about 13 min |
 
-# 6. Cut list for a shorter talk (about 20 min)
+# 6. Cut list for a shorter talk (about 22 min)
 
-Skip or merge, in this order: slide 6 (literature; say two sentences while showing slide 7), slide 11 (limits to actions, merge into slide 9), slide 15 (experimental design), slide 21 (baselines), Demo 2 steps 2 and 4 (keep best case and cut road), the 3D demo in Demo 3 (keep the two Gazebo videos), and slide 16 (merge into slide 17). Slide 25 can be shortened to two sentences. Never cut: slides 4, 13, 18, 19, 20, 23, 24.
+Skip or merge, in this order: slide 6 (literature; say two sentences while showing slide 7), slide 11 (limits to actions, merge into slide 9), slide 16 (training curves: one sentence on slide 15), slide 17 (experimental design), slide 23 (baselines), Demo 2 steps 2 and 4 (keep best case, cut road and the tree clip), the 3D demo in Demo 3 (keep the two Gazebo videos), and slide 18 (merge into slide 19). Slide 27 can be shortened to two sentences. Never cut: slides 4, 13, 15, 20, 21, 22, 25, 26.
 
 # 7. Delivery tips
 

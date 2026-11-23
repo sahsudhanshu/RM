@@ -282,3 +282,31 @@ for ax, (key, ylab, scale) in zip(axs, (("T", "mission time (min)", 1), ("E", "U
 h, l = axs[0].get_legend_handles_labels(); fig.legend(h, l, loc="lower center", ncol=4, frameon=False, fontsize=9.5)
 fig.tight_layout(rect=(0, 0.08, 1, 1)); fig.savefig(f"{OUT}/fig_headline.png", dpi=200); plt.close(fig)
 print("headline figure done")
+
+# ---- 15. training curves (Kaggle logs, loop map, 2U-1G, 3 seeds): imitation, REINFORCE, fine-tuning variants
+import re as _re, json
+KG = os.path.join(IMPL, "results_kaggle", "loop")
+fig, axs = plt.subplots(1, 3, figsize=(10.8, 3.4))
+seed_cols = [TEAL, NAVY, RED]; seed_tags = ["", "_seed1", "_seed2"]
+for k, tg in enumerate(seed_tags):
+    xs, ys, off, last = [], [], 0, -1
+    for line in open(os.path.join(KG, "logs", f"p0_U15G5_2U1G{tg}.log")):
+        m = _re.match(r"\[imitate\] step\s+(\d+)\s+nll/decision ([0-9.]+)", line)
+        if m:
+            st = int(m.group(1))
+            if st < last: off += last + 1
+            last = st; xs.append(off + st); ys.append(float(m.group(2)))
+    axs[0].plot(xs, ys, color=seed_cols[k], lw=1.6, label=f"seed {k}" + (" (bad seed)" if k == 2 else ""))
+axs[0].set_xlabel("imitation step"); axs[0].set_ylabel("cross-entropy per decision"); axs[0].set_title("1. Imitation of the rule policy", loc="left", fontsize=10.5); axs[0].legend(frameon=False, fontsize=8)
+for k, tg in enumerate(seed_tags):
+    d = json.load(open(os.path.join(KG, "models", f"U15G5_2U1G{tg}", "train_p0.json")))
+    v = [(r["step"], r["val_T"]) for r in d if "val_T" in r]
+    axs[1].plot([a for a, _ in v], [b for _, b in v], color=seed_cols[k], lw=1.6)
+axs[1].set_xlabel("REINFORCE step"); axs[1].set_ylabel("validation mission time (min)"); axs[1].set_ylim(150, 330); axs[1].set_title("2. REINFORCE on mission time (P0)", loc="left", fontsize=10.5)
+for name, col, lab in (("p0c", GRAY, "P0+ control"), ("p2", AMBER, "P2 fixed penalty"), ("p3_b90", RED, "P3 (A) Lagrangian"), ("p4", TEAL, "P4 (B) budget input")):
+    d = json.load(open(os.path.join(KG, "models", "U15G5_2U1G", f"train_{name}.json")))
+    v = [(r["step"], r["val_T"]) for r in d if "val_T" in r]
+    axs[2].plot([a for a, _ in v], [b for _, b in v], color=col, lw=1.6, label=lab)
+axs[2].set_xlabel("fine-tuning step"); axs[2].set_ylabel("validation mission time (min)"); axs[2].set_title("3. Fine-tuning variants (seed 0)", loc="left", fontsize=10.5); axs[2].legend(frameon=False, fontsize=8)
+fig.tight_layout(); fig.savefig(f"{OUT}/fig_training.png", dpi=200); plt.close(fig)
+print("training figure done")

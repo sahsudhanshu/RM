@@ -27,7 +27,7 @@ Units: km, min, kJ. Everything below was run on a CPU-only laptop (12 cores, no 
 | Stages A (static budgets), B (blocked/slow roads), stress test (disconnecting block), M1 trend check | `scripts/experiments.py`, `scripts/validate_m1.py` |
 | Demonstration simulation (open-loop vs event-triggered, same instance and event) | 2D video: `scripts/make_animation.py`, `src/edr/viz.py`; **3D browser viewer** (Three.js, 4 scenarios): `scripts/export_viewer_data.py` → `scripts/build_viewer.py` → `viewer/index.html` (self-contained, open it directly in a browser) |
 | Physics replay of the planned missions in Gazebo Harmonic (wheeled UGV, real-terrain heightmap, headless, MP4) | `gazebo/` (see `gazebo/README.md`) |
-| Runnable 3D Gazebo demo (close-up models, real time, optional real terrain), one command | `gazebo/demo/`, package `gazebo/gazebo_demo.zip` |
+| Runnable 3D Gazebo demo (close-up models, real time, optional real terrain, fallen-tree scenario with replanning), one command | `gazebo/demo/`, package `gazebo/gazebo_demo.zip` |
 
 ## Maps
 

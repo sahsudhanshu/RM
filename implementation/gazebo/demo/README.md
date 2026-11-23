@@ -37,10 +37,21 @@ The Gazebo window opens paused-looking until the first command; the mission star
 
 In the Gazebo window: left-drag rotates, middle-drag pans, scroll zooms; or use `--follow ugv0` / `--follow uav0`.
 
+## Fallen-tree scenario: a tree blocks the road, then the mission replans
+```bash
+./run_tree_demo.sh                 # ring-road map: two blocked roads, Gazebo window
+./run_tree_demo.sh border          # border map: one blocked road
+./run_tree_demo.sh loop --terrain terrain/thar24
+./run_tree_demo.sh border --headless --record tree.mp4 --max-sim 120    # no window: write a video
+```
+What happens (about 80 to 110 s into the demo, depending on the map): a tree stands beside the road; the **orange line shows the route the open-loop plan was going to use**; the tree **falls across the road** (animated) and striped barriers appear; the planner updates its road map and the **green line shows the replanned route**; the truck takes the detour and the UAVs reorder their sorties. In the Gazebo window the camera cuts to the event and back (`--show-event`). The plans are `plans/tree-*-event.json` (replanned) and `plans/tree-*-open.json` (the open-loop plan of the same case, used for the orange route). Options: `--event-style strip` for the old red strip instead of a tree, `--dry-run` to validate the world without Gazebo.
+Preview videos: `../demo_preview_tree_border.mp4`, `../demo_preview_tree_loop.mp4`, `../demo_preview_tree_gazebo_window.mp4` (the Gazebo window captured in a virtual display).
+
 ## Plans included (`plans/`)
 `border-typical`, `border-best-replanning`, `paper-typical`, `loop-typical` (event-triggered runs with a road event). More: `../export_plans.py` converts any case of `viewer/missions.json`.
 
 ## Honest limits
 * The UGV motion is physics (wheels, friction, acceleration limits); UAV flight is velocity-controlled (kinematic), and landing/charging is a scripted hop onto the roof pad.
 * Space is scaled 1:50 and time x60; the terrain relief is exaggerated x1.4 in `--terrain` mode.
-* Tested on Ubuntu 24.04 with an RTX 3050: headless recordings and the real Gazebo window in a virtual display; not checked on a physical screen.
+* Tested on Ubuntu 24.04 with an RTX 3050: headless recordings and the real Gazebo window in a virtual display (including the fallen-tree scenario); not checked on a physical screen.
+* In the fallen-tree scenario the tree fall is a scripted animation, and the replanned route is the one our planner produced for that case; the UGV then follows it with wheel physics.

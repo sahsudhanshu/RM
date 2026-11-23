@@ -275,6 +275,29 @@ Periodic & every recharge\\[1mm]
 {\small Transformer policy of~\cite{base} (attention model~\cite{kool}) trained with REINFORCE~\cite{williams}; all variants start from the same P0.}
 \end{frame}
 
+\begin{frame}{5 \,Training Setup and Configuration}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}P{2.6cm}P{10.0cm}@{}}
+\toprule
+\textbf{Part} & \textbf{Setting}\\
+\midrule
+Policy network & Transformer encoder (3 layers, 8 heads, $d=128$, LayerNorm) and glimpse-attention decoder with clipped scores ($C=10$), as in~\cite{base}; 0.73\,M parameters; two extra dynamic geometry features per action\\
+Instances & 15 aerial and 5 ground tasks; a new random instance at every step (no fixed dataset); 64 validation and 100 held-out test instances; team 2U-1G (also 1U-1G, 2U-2G, 4U-2G)\\
+1. Imitation & clone the nearest-feasible rule: 800 steps (2 $\times$ 400), batch 64, Adam, learning rate $10^{-3}$ then $3\cdot10^{-4}$, gradient clip 1.0\\
+2. REINFORCE (P0) & 1{,}200 steps on mission time, batch 64, Adam, learning rate $10^{-4}$ decayed by 0.995 per 20-step epoch, greedy-rollout baseline refreshed each epoch~\cite{williams}\\
+3. Variants & 600 steps from the same P0, learning rate $3\cdot10^{-4}$, leave-one-out baseline over 8 samples per instance; P2: $T+0.3\,T_{ref}E/B_0$; P3: $T+\lambda\,T_{ref}(E-B)^+/B_0$ ($\lambda$ step 0.1, cap 8); P4: hinge weight 3 and the remaining budget as decoder input\\
+Seeds and compute & 3 seeds per map (separate imitation and training runs); Kaggle CPU (4 cores), about 3 h per map; the last checkpoint is used, no best-checkpoint selection\\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+\begin{frame}{5 \,Training Curves (Ring Road, 2U-1G, 3 Seeds)}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_training.png}\\[0.5mm]
+{\small \textbf{1.} Imitation reaches 0.26 for seeds 0 and 1; seed 2 stays at 1.6, a weak base policy that later loops. \textbf{2.} REINFORCE brings the validation time from about 300 to 190 to 220\,min, but the curve is noisy (64 validation instances). \textbf{3.} No fine-tuning variant separates from the control, as in Result 3.}
+\end{frame}
+
 \begin{frame}{5 \,Step 4: Experimental Design}
 \centering
 \includegraphics[height=0.56\textheight]{assets/fig_maps.png}\\[0.5mm]
