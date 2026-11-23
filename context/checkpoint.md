@@ -2,7 +2,7 @@
 
 ## State
 - Everything is committed and pushed to GitHub `sahsudhanshu/RM` (main). The only later additions are this note, `presentation_script.md` and the context updates (commit them if not yet pushed: `git status`).
-- Deck: 25 slides (`presentation_final/Presentation.pdf`, `Presentation_overleaf.zip`); the full 44-slide version is kept as `Presentation_full_44slides.pdf`.
+- Deck: 26 slides (last content slide = future plan) (`presentation_final/Presentation.pdf`, `Presentation_overleaf.zip`); the full 44-slide version is kept as `Presentation_full_44slides.pdf`.
 - Script for the three speakers, demos and Q&A: `context/presentation_script.md`.
 - Gazebo: 22 experiment replays done (`implementation/gazebo/gazebo_vs_plan.csv`); runnable 3D demo packaged (`implementation/gazebo/gazebo_demo.zip`, tested on the friend's Ubuntu laptop in headless mode, in the Gazebo window inside a virtual display and from a clean unzip).
 - Full state, key numbers, limits and rebuild commands: `context/context.md` section 10.

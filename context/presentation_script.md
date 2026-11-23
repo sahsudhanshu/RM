@@ -1,15 +1,15 @@
 # End-Semester Presentation: Script, Teaching Notes and Demo Plan
 
-Deck: `presentation_final/Presentation.pdf` (25 slides). Full 44-slide version for backup: `presentation_final/Presentation_full_44slides.pdf`.
+Deck: `presentation_final/Presentation.pdf` (26 slides). Full 44-slide version for backup: `presentation_final/Presentation_full_44slides.pdf`.
 Three presenters (the three authors on the title slide). Assign names as you like: **Speaker 1, Speaker 2, Speaker 3**.
 
 | Part | Speaker | Slides | Theme | Demo | Time |
 |---|---|---|---|---|---|
 | 1 | Speaker 1 | 1 to 8 | The problem, the intuition, the literature and our questions | **Demo 1** (3D viewer: "the problem") after slide 4 | about 10 min |
 | 2 | Speaker 2 | 9 to 16 | Before mid-sem, its limits, and what we built | **Demo 2** (3D viewer: "replanning at work, honestly") after slide 13 | about 11 min |
-| 3 | Speaker 3 | 17 to 25 | The results, Gazebo, conclusion | **Demo 3** (Gazebo videos) after slide 22 | about 12 min |
+| 3 | Speaker 3 | 17 to 26 | The results, Gazebo, conclusion, future plan | **Demo 3** (Gazebo videos) after slide 22 | about 13 min |
 
-Total about 33 min including demos. **If you only have 20 min**, use the cut list in section 6.
+Total about 34 min including demos. **If you only have 20 min**, use the cut list in section 6.
 
 ---
 
@@ -224,7 +224,7 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 
 ---
 
-# PART 3: Results, Gazebo, conclusion (Speaker 3, slides 17 to 25)
+# PART 3: Results, Gazebo, conclusion, future plan (Speaker 3, slides 17 to 26)
 
 ## Slide 17: Result 2: Replanning recovers time and energy, with few replans (1 min)
 **On screen:** left: change in mission time (min) per map for event-triggered vs open-loop, one dot per training seed, line = median; right: change in UAV energy (kJ).
@@ -306,10 +306,21 @@ Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.
 **On screen:** left "What we showed", right "Limitations and next steps".
 **Say (left):** "We showed four things: road events cost up to twenty-nine percent more energy; event-triggered replanning recovers it with few replans; just-in-time departure cuts drone energy by fifty-three to seventy-four percent at no cost in time; and with sampling and a budget filter we get about twenty percent less time and sixty-five percent less energy with the budget met. Gazebo reproduces the plans to within 0.14 percent in time."
 **Say (right, honest):** "The limitations: our learned energy-aware methods A and B did not beat the control; the four-drone policy is nine to fourteen percent slower than the paper in greedy mode, and more training did not help, search does; we replan only at recharge boundaries and there is one bad training seed that a fallback fixes in terms of failures but not speed; and Gazebo replays plans only, so running the policy and the replanner inside Gazebo is the next step."
-**Close:** "Thank you; we are happy to take questions." (The slide itself has no thank-you line; say it.)
+**Next:** "To finish, here is what we will do next."
 
-## Slide 25: References
-Keep on screen during questions. Numbering follows first citation (IEEE). [1] is the base paper (Mondal et al., arXiv:2504.21111); [10] is the authors' code; [9] is Gazebo (Koenig and Howard).
+## Slide 25: Future plan: improving the method and proving the hypotheses (1 min)
+**On screen:** a table with three columns: open point, what we will implement, proved if.
+**Teach (one row at a time; each row ends in a test that says when the hypothesis counts as proved):**
+1. **H1 is only partly true**, because the 53 to 74% saving relies on UAVs waiting on the ground for free. **Plan:** add a standby energy on the ground and UGV-arrival prediction errors to the simulator, and learn the departure delay instead of using the rule. **Proved if:** the saving stays above 40% at +0 minutes even when ground standby costs 10 to 20% of the hover power.
+2. **H2 was rejected** (A and B equal the control) because there is no trade-off at the route level. **Plan:** make the policy energy-aware where the energy is: learn **when to depart** and **which UGV serves which UAV**, not only the route. **Proved if:** it beats the control by at least 5% energy at equal time over 3 seeds, with a paired confidence interval that excludes zero.
+3. **4U-2G is 9 to 14% slower than the paper.** **Plan:** longer training, a larger model, a curriculum from small to large teams, and search distillation with a tuned stopping rule. **Proved if:** greedy time is within 5% of the paper.
+4. **The policy is not run inside Gazebo.** **Plan:** a closed loop in Gazebo: measure physical delays, replan on them, and add slopes, wind and a UAV battery model. **Proved if:** replanning still saves time under Gazebo disturbances.
+5. **Cut bridge: 52 to 68% failures.** **Plan:** replan inside a round and keep a fuel reserve so stranded UAVs can divert. **Proved if:** failures are halved in the stress test.
+- Bottom line: H3 and H4 are confirmed; the plan is to prove H1 and H2 under realistic assumptions and to close the loop in Gazebo.
+**Say:** "Looking ahead, each open point has a concrete plan and a test that says when it counts as proved. For the first hypothesis we will make the assumptions realistic, with standby energy on the ground and prediction errors, and learn the departure delay. For the second, we will move the learning to where the energy is: departure timing and the assignment of drones to trucks. We will also work on the four-drone gap, run the policy and replanner inside Gazebo, and handle cut bridges with mid-round replanning and a fuel reserve. Thank you; we are happy to take questions."
+
+## Slide 26: References
+Keep on screen during questions (or return to slide 23 or 25 if asked about hypotheses or future work). Numbering follows first citation (IEEE). [1] is the base paper (Mondal et al., arXiv:2504.21111); [10] is the authors' code; [9] is Gazebo (Koenig and Howard).
 
 ---
 
@@ -347,14 +358,14 @@ Keep on screen during questions. Numbering follows first citation (IEEE). [1] is
 | **Demo 1** | 1:30 | **Demo 2** | 2:00 | **Demo 3** | 2:30 |
 | 5 Problem statement | 1:00 | 14 Policies | 1:15 | 23 Hypotheses | 1:00 |
 | 6 Literature | 1:15 | 15 Experiments | 0:45 | 24 Conclusion | 1:30 |
-| 7 Gap | 0:45 | 16 Result 1 | 0:45 | 25 References | (Q&A) |
-| 8 Questions | 1:00 | 17 Result 2 | 1:00 | | |
+| 7 Gap | 0:45 | 16 Result 1 | 0:45 | 25 Future plan | 1:00 |
+| 8 Questions | 1:00 | 17 Result 2 | 1:00 | 26 References | (Q&A) |
 | | | 18 Result 3 | 1:30 | | |
-| **Part 1 total** | about 10 min | **Part 2 total** | about 11 min | **Part 3 total** | about 12 min |
+| **Part 1 total** | about 10 min | **Part 2 total** | about 11 min | **Part 3 total** | about 13 min |
 
 # 6. Cut list for a shorter talk (about 20 min)
 
-Skip or merge, in this order: slide 6 (literature; say two sentences while showing slide 7), slide 11 (limits to actions, merge into slide 9), slide 15 (experimental design), slide 21 (baselines), Demo 2 steps 2 and 4 (keep best case and cut road), the 3D demo in Demo 3 (keep the two Gazebo videos), and slide 16 (merge into slide 17). Never cut: slides 4, 13, 18, 19, 20, 23, 24.
+Skip or merge, in this order: slide 6 (literature; say two sentences while showing slide 7), slide 11 (limits to actions, merge into slide 9), slide 15 (experimental design), slide 21 (baselines), Demo 2 steps 2 and 4 (keep best case and cut road), the 3D demo in Demo 3 (keep the two Gazebo videos), and slide 16 (merge into slide 17). Slide 25 can be shortened to two sentences. Never cut: slides 4, 13, 18, 19, 20, 23, 24.
 
 # 7. Delivery tips
 

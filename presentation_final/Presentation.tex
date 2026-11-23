@@ -537,6 +537,23 @@ H4 same reliability, fewer replans & \cmark & same time, 1 to 3 fewer replans\\
 \end{columns}
 \end{frame}
 
+\begin{frame}{6 \,Future Plan: Improving the Method and Proving the Hypotheses}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{@{}P{3.3cm}P{5.7cm}P{3.5cm}@{}}
+\toprule
+\textbf{Open point} & \textbf{What we will implement} & \textbf{Proved if}\\
+\midrule
+H1 partly true: saving relies on free waiting on the ground & Standby energy on the ground and UGV-arrival prediction error in the simulator; learn the departure delay & saving stays above 40\% at $+0$ min with standby at 10 to 20\% of hover\\
+H2 rejected: A and B equal the control & Make the policy energy-aware where the energy is: learn departure timing and UAV--UGV assignment, not only the route & beats the control by 5\% energy at equal time on 3 seeds (paired CI)\\
+4U-2G is 9 to 14\% slower than~\cite{base} & Longer training, a larger model, a curriculum from small teams, search distillation with a tuned stopping rule & greedy time within 5\% of the paper\\
+The policy is not run inside Gazebo~\cite{gazebo} & Closed loop in Gazebo: measure delays, replan, add slopes, wind and a UAV battery model & replanning still saves time under Gazebo disturbances\\
+Cut bridge: 52 to 68\% failures & Replan inside a round and keep a fuel reserve so stranded UAVs can divert & failures halved in the stress test\\
+\bottomrule
+\end{tabular}\\[2mm]
+{\small H3 and H4 are confirmed; the plan is to prove H1 and H2 under realistic assumptions and to close the loop in Gazebo.}
+\end{frame}
+
 \begin{frame}{References}
 \fontsize{5.7}{6.7}\selectfont\setlength{\itemsep}{0.5pt}
 \begin{thebibliography}{99}

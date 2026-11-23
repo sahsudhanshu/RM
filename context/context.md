@@ -222,7 +222,7 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 ### Deliverables
 | What | Where |
 |---|---|
-| **Final deck, 25 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
+| **Final deck, 26 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
 | Full 44-slide deck (backup, has the removed slides) | `presentation_final/Presentation_full_44slides.pdf`, `body_full_44slides.tex` |
 | **Presentation script** (3 speakers, per-slide teaching, demos, Q&A) | `context/presentation_script.md` |
 | 3D browser viewer (18 scenarios, open-loop vs replanning) | `implementation/viewer/index_offline.html` (works offline); notes `implementation/viewer/DEMO.md` |
@@ -232,8 +232,8 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 
 Repository: GitHub `sahsudhanshu/RM` (branch `main`). Not in the repo (size or reproducible): `.venv`, `presentation_final/.texlocal` (local TeX, 230 MB), `*.pt` checkpoints, raw per-instance Kaggle tables, Gazebo videos/run folders.
 
-### Story of the deck (25 slides)
-Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-15: reproduce base, event-triggered replanning, learning policies, experimental design) -> results (16-21) -> Gazebo (22) -> hypotheses (23) -> conclusion and limits (24) -> references (25).
+### Story of the deck (26 slides)
+Problem (2-5) -> literature and gap (6-8) -> before mid-sem (9-10) -> limits and what we did (11) -> method (12-15: reproduce base, event-triggered replanning, learning policies, experimental design) -> results (16-21) -> Gazebo (22) -> hypotheses (23) -> conclusion and limits (24) -> future plan with a success test per hypothesis (25) -> references (26).
 
 ### Key results (all with the numbers used in the deck)
 * Road events hurt: up to +22 % time and +29 % energy (border map, open-loop rule policy, 18 events).
