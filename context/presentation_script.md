@@ -19,7 +19,7 @@ Total about 36 min including demos. **If you only have 20 min**, use the cut lis
 2. Copy the Gazebo videos to the presenting laptop and test they play:
    `implementation/gazebo/demo_preview_flat.mp4`, `demo_preview_terrain.mp4`, `demo_preview_gazebo_window.mp4`
    and the experiment replays `implementation/gazebo/videos/border-block-medium-middle-best_case__event.mp4`, `videos_terrain/border-block-medium-middle-typical_case__event.mp4`.
-3. Backup if the browser misbehaves: `implementation/results/U15G5_2U1G/media/mission_slow_high_early.mp4` (2D video of the same scenario).
+3. **Backup if the browser misbehaves: recorded 3D viewer videos** in `implementation/viewer/videos/`: `3d_viewer_ringroad_best_case.mp4` (Demo 1 and Demo 2 step 1), `3d_viewer_border_worst_case.mp4` (Demo 2 step 2), `3d_viewer_ringroad_cut_road.mp4` (Demo 2 step 3). Each shows open-loop on the left and replanning on the right with the live stats and the timeline. (Older 2D backup: `implementation/results/U15G5_2U1G/media/mission_slow_high_early.mp4`.)
 4. Have the PDF open full screen, and `Presentation_full_44slides.pdf` ready for questions about removed slides.
 5. Practise the three hand-overs (end of each part) so the transition takes 5 seconds.
 
@@ -55,6 +55,8 @@ Scenario list (top), **3D / Top** view, **Play/Pause** (Space), **Restart**, **S
 | P1 | At decision time, sample N routes, keep the fastest one that fits the budget |
 | A / B | Our two candidate methods: A = Lagrangian penalty, B = budget input to the decoder |
 | JIT | Just-in-time departure: a UAV that expects to wait delays take-off and waits on the ground |
+| Sampling + budget filter (P1) | At decision time sample 64 routes from the trained policy and keep the fastest one whose energy fits the budget (E <= B); no extra training |
+| P1 + JIT | The two levers together: sampling makes the route faster (about -20% time), JIT removes the hover energy (about -65%); combined, the budget is met (0% violations on static roads) |
 | Team names | "2U-1G" = 2 UAVs and 1 UGV, etc. |
 
 Physical facts to quote: UAV battery 287.7 kJ (about 24 min of flight, about 14.5 km); UAV speed 10 m/s, power 198.6 W cruising and 229.6 W hovering; UGV speed 4.5 m/s; recharge 15 min.

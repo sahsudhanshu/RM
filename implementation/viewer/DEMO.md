@@ -7,6 +7,9 @@
 | `index.html` | Same page, loads three.js from the internet. This is the one published as the Claude artifact (private link; share it from the page's Share menu if the professor needs the link). |
 | `../results/U15G5_2U1G/media/mission_slow_high_early.mp4` (+ `.gif`) | 2D video of one scenario, side by side. Backup if a browser misbehaves. |
 
+## Recorded videos (backup, no browser needed)
+`videos/3d_viewer_ringroad_best_case.mp4`, `videos/3d_viewer_border_worst_case.mp4`, `videos/3d_viewer_ringroad_cut_road.mp4`: the 3D viewer played through three scenarios (open-loop left, event-triggered replanning right, live stats and timeline). Re-record with `python3 record_viewer.py` (headless Chrome; time is set frame by frame through the scrubber, so the video is smooth); options `--case N --speed M --fps F --out file.mp4`.
+
 ## 90-second script
 1. *(Scenario list, ring-road map "slow edges, high, early")* "Two UAVs and one UGV must visit all task points. The UGV is the charging station and is slow, so UAVs hover and wait for it. Both panels are the same instance and the same road event; only the controller differs."
 2. *(Press Play, speed 12)* "At t = 47 min a stretch of road becomes slow (amber). Left: open-loop, the plan is never revisited. Right: our event-triggered replanning notices the event, checks whether each planned rendezvous is still reachable on time, and replans only then."

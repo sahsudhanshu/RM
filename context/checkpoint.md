@@ -15,5 +15,7 @@
 ## Added last
 - Training slides (15, 16) and the Gazebo fallen-tree scenario (`implementation/gazebo/demo/run_tree_demo.sh`, tested headless on both maps and in the Gazebo window in a virtual display); script renumbered for 28 slides.
 
+- Recorded 3D viewer videos: `implementation/viewer/videos/` (three scenarios, made with `implementation/viewer/record_viewer.py`).
+
 ## Open (nothing blocks the presentation)
 Run the learned policy and replanner inside Gazebo; JIT mode in the 3D viewer; closing the 4U-2G gap by training; making candidates A and B work. The friend's laptop IP changes with the Wi-Fi (`hostname -I`); SSH key `~/.ssh/friend_gazebo`; remove access by deleting the last line of its `~/.ssh/authorized_keys`.

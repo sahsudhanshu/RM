@@ -225,7 +225,7 @@ Kaggle CLI 2.2.4 installed in `implementation/.venv`; account `vichanshur` is al
 | **Final deck, 28 slides** | `presentation_final/Presentation.pdf`; Overleaf upload: `presentation_final/Presentation_overleaf.zip`; source `body.tex` (+ `preamble.tex`, `extras.tex`, `make_figs.py`, `build.py`) |
 | Full 44-slide deck (backup, has the removed slides) | `presentation_final/Presentation_full_44slides.pdf`, `body_full_44slides.tex` |
 | **Presentation script** (3 speakers, per-slide teaching, demos, Q&A) | `context/presentation_script.md` |
-| 3D browser viewer (18 scenarios, open-loop vs replanning) | `implementation/viewer/index_offline.html` (works offline); notes `implementation/viewer/DEMO.md` |
+| 3D browser viewer (18 scenarios, open-loop vs replanning) and its **recorded videos** | `implementation/viewer/index_offline.html` (works offline); videos `implementation/viewer/videos/*.mp4` (made by `record_viewer.py`); notes `implementation/viewer/DEMO.md` |
 | Gazebo experiment replays (22 runs) and results | `implementation/gazebo/` (`gazebo_vs_plan.csv`, `results*/`, videos in `videos/` and `videos_terrain/`, git-ignored) |
 | **Runnable 3D Gazebo demo** (no experiments), incl. the **fallen-tree scenario** (`./run_tree_demo.sh`: tree falls, orange old route, green replanned route) | `implementation/gazebo/demo/`, package `implementation/gazebo/gazebo_demo.zip`, previews `implementation/gazebo/demo_preview_*.mp4` |
 | Code, tests (35), results, README | `implementation/` (`README.md` documents every experiment) |
@@ -257,3 +257,8 @@ The Gazebo machine used so far is the friend's Ubuntu 24.04 laptop (RTX 3050) ov
 
 ### Training details (also on slides 15 and 16)
 Transformer encoder (3 layers, 8 heads, d = 128, LayerNorm) + glimpse-attention decoder (clip 10), 0.73 M parameters. Fresh random instance every step (15 aerial + 5 ground tasks), 64 validation and 100 held-out test instances. 1) Imitation of the nearest-feasible rule: 800 steps (2 x 400), batch 64, Adam 1e-3 then 3e-4, clip 1.0. 2) REINFORCE (P0): 1,200 steps on mission time, batch 64, Adam 1e-4 with decay 0.995 per 20-step epoch, greedy-rollout baseline. 3) Variants: 600 steps from the same P0, lr 3e-4, leave-one-out baseline over 8 samples; P2 T + 0.3 T_ref E/B0; P3 Lagrangian (dual step 0.1, cap 8); P4 hinge weight 3 + budget input. 3 seeds per map, Kaggle CPU 4 cores, about 41 to 53 min per P0 run and about 3 h per map; last checkpoint used. Curves (`presentation_final/assets/fig_training.png`, from `results_kaggle/loop/logs` and `train_*.json`): imitation cross-entropy 1.5 -> 0.26 for seeds 0 and 1, seed 2 stays at 1.6 (the weak seed); REINFORCE validation time about 300 -> 190-220 min (noisy, 64 instances); no variant separates from the control.
+
+### Quick explainer: "sampling + budget filter" and "JIT" (slide 22)
+* **Sampling + budget filter (P1):** at decision time sample N = 64 routes from the trained policy, simulate each, keep the fastest route with E <= B (else the lowest-energy route). No extra training. About -20% mission time.
+* **JIT (just-in-time departure):** a UAV that expects to wait for the UGV delays take-off and waits on the ground (free) instead of hovering; it arrives as the UGV arrives, so mission time is unchanged and hover energy disappears (about -65% UAV energy). Assumes free ground waiting and a predictable UGV arrival.
+* **Combined (4 maps x 3 seeds, 2U-1G, static roads):** base 228 min / 4.4 MJ / 78% over budget -> both 182 min / 1.5 MJ / 0% over budget.
