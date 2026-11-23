@@ -1,5 +1,7 @@
 # Gazebo replay of the planned missions
 
+**Runnable 3D demo (no experiments):** see `demo/README.md` and the package `gazebo_demo.zip` (`./run_demo.sh` opens a Gazebo window with close-up 3D vehicles, real-time playback, optional real terrain). Preview videos: `demo_preview_flat.mp4`, `demo_preview_terrain.mp4`, `demo_preview_gazebo_window.mp4`. The sections below describe the headless experiment replays.
+
 Physics-based check of the plans produced by our simulator (`../viewer/missions.json`), run in **Gazebo Harmonic (gz-sim 8)**
 on a separate GPU machine over SSH. It replays the plans, it does not run the learned policy inside Gazebo.
 

@@ -27,3 +27,7 @@ implementation/results_kaggle/**/stage*.csv
 implementation/gazebo/terrain/*/t_*.png
 implementation/gazebo/runs*/
 implementation/gazebo/videos*/
+
+# demo: keep the small preview videos and the package, ignore run output
+!implementation/gazebo/demo_preview*.mp4
+implementation/gazebo/demo/demo_out/
