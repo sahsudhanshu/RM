@@ -1,0 +1,676 @@
+% ------------------------------ title ----------------------------------
+\title{Energy-Constrained UAV--UGV Replanning\\ under Dynamic Road Conditions}
+\subtitle{End-Semester Evaluation: Method, Experiments and Results}
+\author{Mayank Anand \and Sudhanshu \and Sujal}
+\institute{Department of Information Technology\\
+Indian Institute of Information Technology, Allahabad}
+\date{}
+
+\begin{document}
+
+\begin{frame}\titlepage\end{frame}
+
+\begin{frame}{The Story in Six Steps}
+\centering
+\begin{tikzpicture}
+  \node[fteal]  (a) at (0,0)    {\textbf{1}\\Problem and intuition};
+  \node[fteal]  (b) at (2.5,0)  {\textbf{2}\\Literature and research gap};
+  \node[fgray]  (c) at (5.0,0)  {\textbf{3}\\Work before mid-sem};
+  \node[fred]   (d) at (7.5,0)  {\textbf{4}\\Its challenges and limits};
+  \node[fteal]  (e) at (10.0,0) {\textbf{5}\\Work after mid-sem};
+  \node[fnavy]  (f) at (12.5,0) {\textbf{6}\\Results and conclusions};
+  \foreach \x/\y in {a/b,b/c,c/d,d/e,e/f} \draw[ar] (\x) -- (\y);
+  \draw[Midnight!40, thick] (-1.0,-1.0) -- (6.2,-1.0);
+  \node[lab] at (2.6,-1.35) {covered at mid-sem (summarised here)};
+  \draw[Teal!80!black, thick] (8.8,-1.0) -- (13.7,-1.0);
+  \node[lab, text=Teal!60!black] at (11.25,-1.35) {new since mid-sem};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{1 \,Problem: A Team of UAVs and a UGV Charger}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.52\textwidth}
+\centering
+\includegraphics[width=\linewidth]{assets/base_fig1.png}\\[0.5mm]
+{\tiny Illustration from Fig.~1 of~\cite{base}}
+\end{column}
+\begin{column}{0.46\textwidth}
+\vspace{2mm}
+\begin{tikzpicture}[node distance=5mm]
+  \node[fteal, text width=4.6cm]  (a) {\textbf{UAVs} are fast but battery-limited\\(about 24 min of flight)};
+  \node[fgray, text width=4.6cm, below=of a] (b) {\textbf{UGV} is slow, stays on roads,\\and charges one UAV at a time~\cite{base},~\cite{maini}};
+  \node[fnavy, text width=4.6cm, below=of b] (c) {\textbf{Goal:} visit every task point\\as fast as possible};
+  \draw[ar] (a) -- (b); \draw[ar] (b) -- (c);
+\end{tikzpicture}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{1 \,Intuition: One Sortie, Step by Step}
+\centering
+\begin{tikzpicture}
+  \node[fb] (n1) at (0,2.2) {Take off\\ full battery};
+  \node[fb] (n2) at (3.0,2.2) {Visit task points\\ (battery check)};
+  \node[dia, text width=1.5cm] (d1) at (6.3,2.2) {Battery low\\or all done?};
+  \node[fb] (n3) at (9.6,2.2) {Fly to rendezvous,\\ land on UGV};
+  \node[famber] (n4) at (12.6,2.2) {\textbf{Hover} until\\ UGV arrives};
+  \node[fb] (n5) at (12.6,0) {Recharge\\ $T_R=15$ min};
+  \node[dia, text width=1.4cm] (d2) at (9.3,0) {Tasks\\left?};
+  \node[fnavy] (n6) at (5.9,0) {Mission done};
+  \draw[ar] (n1)--(n2); \draw[ar] (n2)--(d1);
+  \draw[ar] (d1)-- node[above,lab]{yes} (n3);
+  \draw[ar] (n3)--(n4); \draw[ar] (n4)--(n5); \draw[ar] (n5)--(d2);
+  \draw[ar] (d2)-- node[above,lab]{no} (n6);
+  \draw[ar] (d1.north) -- ++(0,0.65) -| node[pos=0.25,above,lab]{no: keep visiting} (n2.north);
+  \draw[ar] (d2.south) -- ++(0,-0.6) -| node[pos=0.25,below,lab]{yes: next sortie} (n1.south);
+\end{tikzpicture}\\[3mm]
+{\small The UGV is the bottleneck: it drives at 4.5\,m/s, the UAV flies at 10\,m/s \cite{base}.}
+\end{frame}
+
+\begin{frame}{1 \,Intuition: Mission Time Is Not Energy}
+\centering
+\begin{tikzpicture}[x=0.108cm, y=1cm]
+  % UAV row
+  \def\h{0.55}
+  \foreach \a/\b/\c in {0/24/Midnight, 24/33/Amber, 33/48/gray!45, 48/66/Midnight, 66/80/Amber, 80/95/gray!45, 95/113/Midnight}
+    \fill[\c] (\a,1.6) rectangle (\b,1.6+\h);
+  \node[left, font=\scriptsize] at (-0.5,1.88) {UAV};
+  % UGV row
+  \foreach \a/\b/\c in {0/33/Teal!70, 33/48/gray!45, 48/80/Teal!70, 80/95/gray!45}
+    \fill[\c] (\a,0.5) rectangle (\b,0.5+\h);
+  \node[left, font=\scriptsize] at (-0.5,0.78) {UGV};
+  \node[font=\tiny, text=white] at (12,1.88) {flying};
+  \node[font=\tiny] at (28.5,1.88) {hover};
+  \node[font=\tiny] at (40.5,1.88) {charge};
+  \node[font=\tiny, text=white] at (57,1.88) {flying};
+  \node[font=\tiny] at (73,1.88) {hover};
+  \node[font=\tiny, text=white] at (16,0.78) {driving to rendezvous};
+  \node[font=\tiny] at (40.5,0.78) {charging UAV};
+  \draw[Amber!80!black, thick, <->] (24,1.45) -- (33,1.45);
+  \node[lab, text=Amber!60!black] at (28.5,1.2) {UGV late};
+  \draw[->] (0,0.1) -- (116,0.1); \node[font=\tiny, below] at (58,0.1) {mission time (min)};
+\end{tikzpicture}\\[2mm]
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.47\textwidth}
+\begin{block}{Mission time}
+$T$ = when the \emph{last} agent finishes
+\end{block}
+\end{column}
+\begin{column}{0.47\textwidth}
+\begin{block}{Mission energy}
+$E=\sum\big(P_{\text{fly}}\,t_{\text{fly}}+P_{\text{hover}}\,t_{\text{wait}}\big)$\; \cite{base},~\cite{hurwitz}
+\end{block}
+\end{column}
+\end{columns}
+{\scriptsize $P_{\text{fly}}\!=\!198.6$\,W at 10\,m/s, $P_{\text{hover}}\!=\!229.6$\,W: waiting in the air is the hidden energy cost.}
+\end{frame}
+
+\begin{frame}{1 \,Why It Gets Harder: Roads Change During the Mission}
+\centering
+\begin{tikzpicture}
+  \node[fred]   (a) at (0,0)    {Road blocked\\ or slowed};
+  \node[fgray]  (b) at (2.9,0)  {UGV detours,\\ arrives late};
+  \node[famber] (c) at (5.8,0)  {UAV hovers\\ longer};
+  \node[famber] (d) at (8.7,0)  {Extra\\ energy used};
+  \node[fred]   (e) at (11.6,0) {Over budget or\\ missed recharge};
+  \foreach \x/\y in {a/b,b/c,c/d,d/e} \draw[arr] (\x) -- (\y);
+\end{tikzpicture}\\[7mm]
+\begin{tikzpicture}[scale=1.0, font=\scriptsize]
+  \node[circle, fill=Midnight, inner sep=1.6pt, label=left:UGV] (A) at (0,0) {};
+  \node[circle, fill=Teal, inner sep=1.6pt, label=right:rendezvous] (B) at (3.2,0) {};
+  \node[circle, fill=gray, inner sep=1pt] (C) at (0,1.6) {};
+  \node[circle, fill=gray, inner sep=1pt] (D) at (3.2,1.6) {};
+  \draw[red!70!black, very thick] (A)--(B);
+  \node[red!70!black, font=\large] at (1.6,0) {$\times$};
+  \node[below, text=Muted] at (1.6,-0.15) {direct road: 2.7 km, 10 min};
+  \draw[gray, thick, dashed] (A)--(C)--(D)--(B);
+  \node[above, text=Muted] at (1.6,1.65) {detour: 8.1 km, 30 min};
+  \node[align=left, right] at (4.8,0.8) {\textbf{Hand-checked case:}\\the UAV waits 19 more minutes,\\costing 262\,kJ of hover energy.};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{1 \,Problem Statement}
+\centering
+\begin{tikzpicture}
+  \node[fgray, text width=3.1cm] (in) at (0,0.9) {\textbf{Inputs}\\[0.5mm] task points, fleet,\\road graph $G_t$, budget $B$};
+  \node[fnavy, text width=2.6cm, minimum height=1.6cm] (pl) at (4.6,0.9) {\textbf{Planner}\\(learned policy)};
+  \node[fteal, text width=3.7cm] (out) at (9.4,0.9) {\textbf{Outputs}\\[0.5mm] UAV sorties, UGV routes,\\rendezvous schedule};
+  \draw[ar] (in) -- (pl); \draw[ar] (pl) -- (out);
+  \node[famber, text width=3.4cm] (ev) at (4.6,-1.05) {Road events\\(blocked / slow)};
+  \draw[arr] (ev) -- (pl);
+  \draw[ar, dashed] (out.south) |- node[pos=0.7,below,lab]{replan if the plan becomes infeasible} (ev.east);
+\end{tikzpicture}\\[2mm]
+\begin{block}{Formulation}
+\centering
+$\displaystyle \min\; T \quad\text{s.t.}\quad E\le B=\beta B_0,\;\; \beta\in\{0.7,0.8,0.9,1.0\}$
+\end{block}
+\vspace{-1mm}
+\begin{center}
+\chip{Teal}{every task visited}\;\chip{Teal}{sortie within battery $F_a$}\;\chip{Teal}{rendezvous on a reachable road node}\;\chip{Teal}{one UAV per UGV at a time}
+\end{center}
+\end{frame}
+
+\begin{frame}{2 \,Literature: How the Field Got Here}
+\centering
+\begin{tikzpicture}
+  \foreach \y/\t in {3.5/Optimisation, 1.9/Learning-based routing, 0.3/Energy and uncertainty}
+    \node[anchor=west, font=\scriptsize\bfseries, text=Midnight] at (-0.7,\y+0.78) {\t};
+  \node[fgray, text width=3.1cm] (m)  at (1.3,3.5)  {Maini et al. 2019~\cite{maini}\\ MILP + heuristics,\\ 1 UAV + 1 UGV};
+  \node[fgray, text width=3.1cm] (mr) at (6.4,3.5)  {Mondal et al. 2023~\cite{mrs}\\ bilevel planning,\\ large coverage};
+  \node[fgray, text width=3.1cm] (f)  at (6.4,1.9)  {Fan et al. 2023~\cite{fan}\\ DRL, 1 UAV,\\ many chargers};
+  \node[fteal, text width=3.2cm] (b)  at (11.3,1.9) {\textbf{Mondal et al. 2025~\cite{base}}\\ Transformer DRL,\\ multi UAV--UGV};
+  \node[fgray, text width=3.1cm] (s)  at (1.3,0.3)  {Shi et al. 2022~\cite{shi}\\ chance-constrained\\ MDP rendezvous};
+  \node[fgray, text width=3.1cm] (l)  at (6.4,0.3)  {Lin et al. 2022~\cite{lin}\\ robust surveillance,\\ charging stations};
+  \node[fgray, text width=3.2cm] (r)  at (11.3,0.3) {Mondal et al. 2025~\cite{icra}\\ risk-aware attention RL,\\ uncertain fuel};
+  \draw[ar] (m) -- (mr); \draw[ar] (f) -- (b); \draw[ar] (mr.south east) -- (b.north west);
+  \draw[ar] (s) -- (l); \draw[ar] (l) -- (r);
+\end{tikzpicture}\\[1mm]
+{\scriptsize Left to right = later work. The base paper \cite{base} compares against the bilevel line~\cite{mrs} and extends the DRL line~\cite{fan}.}
+\end{frame}
+
+\begin{frame}{2 \,The Base Paper in One Flow}
+\centering
+\begin{tikzpicture}
+  \node[fgray] (a) at (0,1.4)   {Task points\\ $(x,y,b)$};
+  \node[fgray] (b) at (2.8,1.4) {Transformer\\ encoder (3 layers)};
+  \node[fteal] (c) at (5.6,1.4) {Decoder: pick\\ agent, then action};
+  \node[fgray, text width=2.5cm] (d) at (8.6,1.4) {Greedy nearest-UGV\\ assignment (rule)};
+  \node[fgray] (e) at (11.6,1.4){Simulator:\\ time, fuel, failures};
+  \draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d); \draw[ar] (d)--(e);
+  \node[fb, text width=5.0cm] (t) at (5.6,-0.3) {REINFORCE with greedy-rollout baseline~\cite{williams}\\ minimises mission time};
+  \draw[ar, dashed] (e.south) |- (t.east); \draw[ar, dashed] (t.north) -- (c.south);
+\end{tikzpicture}\\[3mm]
+\chip{Teal}{sortie-wise agent switching}\;\chip{Teal}{attention model~\cite{kool}}\;\chip{Teal}{beats GLS / Tabu / SA}\\[2mm]
+{\small It handles \emph{time} well, but assumes \textbf{fixed roads} and has \textbf{no energy budget}.}
+\end{frame}
+
+\begin{frame}{2 \,Research Gap}
+\centering\scriptsize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}P{3.4cm}cccc@{}}
+\toprule
+Work & \makecell{Learned\\policy} & \makecell{Multi\\UAV--UGV} & \makecell{Mission energy\\budget} & \makecell{Roads change\\during mission}\\
+\midrule
+Mondal et al.~\cite{base} (base) & \cmark & \cmark & \xmark & \xmark\\
+Mondal et al.~\cite{icra} & \cmark & \pmark & \pmark (fuel risk) & \xmark\\
+Shi et al.~\cite{shi} & \xmark & \xmark & \pmark (fuel risk) & \xmark\\
+Lin et al.~\cite{lin} & \xmark & \cmark & \pmark (feasibility) & \pmark (obstacles)\\
+\midrule
+\textbf{This work} & \cmark & \cmark & \cmark & \cmark\\
+\bottomrule
+\end{tabular}\\[3mm]
+{\tiny \cmark\ addressed \quad \pmark\ partial \quad \xmark\ not addressed}\\[3mm]
+\begin{tikzpicture}
+  \node[fnavy, text width=11.5cm] {No reviewed work combines a learned multi-UAV--UGV policy, a mission energy budget, and roads that change during the mission.};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{2 \,From the Gap to Our Questions}
+\centering
+\begin{tikzpicture}[node distance=3mm]
+  \node[fnavy, text width=2.6cm, minimum height=3.6cm] (g) at (0,0) {Gap:\\ energy budget\\ + changing roads};
+  \node[fteal, text width=4.6cm] (q1) at (4.4,1.8)  {\textbf{RQ1} Time--energy trade-off?};
+  \node[fteal, text width=4.6cm] (q2) at (4.4,0.6)  {\textbf{RQ2} Stay within a budget?};
+  \node[fteal, text width=4.6cm] (q3) at (4.4,-0.6) {\textbf{RQ3} Effect of blockages?};
+  \node[fteal, text width=4.6cm] (q4) at (4.4,-1.8) {\textbf{RQ4} Event-triggered vs periodic replanning?};
+  \node[famber, text width=4.4cm] (h1) at (10.2,1.8)  {H1: energy falls, time barely rises};
+  \node[famber, text width=4.4cm] (h2) at (10.2,0.6)  {H2: constrained beats fixed penalty};
+  \node[famber, text width=4.4cm] (h3) at (10.2,-0.6) {H3: more disruption, more energy};
+  \node[famber, text width=4.4cm] (h4) at (10.2,-1.8) {H4: same reliability, fewer replans};
+  \foreach \i in {1,2,3,4} {\draw[ar] (g.east) -- (q\i.west); \draw[ar] (q\i) -- (h\i);}
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{3 \,Before Mid-Sem: What We Did}
+\centering
+\begin{tikzpicture}
+  \node[fgray, text width=1.9cm] (a) at (0,1.2)   {Studied the base paper~\cite{base}};
+  \node[fgray, text width=1.9cm] (b) at (2.4,1.2) {Found its limits};
+  \node[fgray, text width=1.9cm] (c) at (4.8,1.2) {Formalised $\min T$ s.t. $E\le B$};
+  \node[fgray, text width=1.9cm] (d) at (7.2,1.2) {Road, energy and budget models};
+  \node[fgray, text width=1.9cm] (e) at (9.6,1.2) {Candidate methods A and B};
+  \node[fgray, text width=1.9cm] (f) at (12.0,1.2){Replanning design};
+  \foreach \x/\y in {a/b,b/c,c/d,d/e,e/f} \draw[ar] (\x) -- (\y);
+  \node[fgray, text width=5.6cm] (g) at (3.4,-0.5) {Experimental plan: policies P0--P4, stages A, B, C};
+  \node[fgray, text width=5.6cm] (h) at (9.6,-0.5) {Gazebo testbed started: desert terrain + 4-wheel UGV~\cite{gazebo}};
+  \draw[ar] (c.south) -- (g.north); \draw[ar] (f.south) -- (h.north);
+\end{tikzpicture}\\[3mm]
+{\small A proposal and design phase: \textbf{no learned results yet}.}
+\end{frame}
+
+\begin{frame}{3 \,Summary 1/3: Formulation and Models}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.5\textwidth}
+\textbf{Road model}\\[1mm]
+\begin{tikzpicture}[font=\scriptsize]
+  \foreach \y/\c/\t in {0/gray!60/{normal: original travel time}, -0.9/Amber!90!black/{slow: time $\times\,\kappa>1$}, -1.8/red!70!black/{blocked: edge removed}} {
+    \draw[\c, line width=2.4pt] (0,\y) -- (2.2,\y);
+    \fill[Midnight] (0,\y) circle (1.5pt); \fill[Midnight] (2.2,\y) circle (1.5pt);
+    \node[right] at (2.4,\y) {\t};}
+  \node[red!70!black] at (1.1,-1.8) {$\times$};
+\end{tikzpicture}\\[2mm]
+\textbf{Events:} type $\times$ level $\times$ time\\
+\chip{Amber}{blocked / slow}\chip{Amber}{low / med / high}\chip{Amber}{early / mid / late}
+\end{column}
+\begin{column}{0.47\textwidth}
+\textbf{Energy and budget}\\[1mm]
+\begin{block}{Mission energy}
+$E=\sum\big(P_{\text{fly}}t_{\text{fly}}+P_{\text{wait}}t_{\text{wait}}\big)$
+\end{block}
+\begin{block}{Budget}
+$B=\beta B_0$, with $B_0$ = base-policy energy on the same static instance
+\end{block}
+{\scriptsize $F_a$ = per-sortie battery (from \cite{base}); $B$ = mission budget (new).}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{3 \,Summary 2/3: Proposed Framework}
+\centering
+\begin{tikzpicture}
+  \node[fgray, text width=1.9cm]  (i) at (0,2.0)    {Instance\\ $(x_i,y_i,b_i)$};
+  \node[fgray, text width=2.0cm]  (e) at (2.6,2.0)  {Encoder\\ (unchanged)};
+  \node[fteal, text width=2.5cm]  (d) at (5.5,2.0)  {Route decoder\\ {\scriptsize (+ budget input in B)}};
+  \node[fgray, text width=2.7cm]  (a) at (8.7,2.0)  {Greedy assignment (frozen)};
+  \node[fgray, text width=2.0cm]  (s) at (11.8,2.0) {Simulator\\ $T$, $E$};
+  \node[fteal, text width=2.2cm]  (r) at (11.8,0.2) {Road layer\\ events on $G_t$};
+  \node[fteal, text width=2.5cm]  (c) at (8.7,0.2)  {Check reach and time};
+  \node[fteal, text width=2.3cm]  (m) at (5.5,0.2)  {Updated action masks};
+  \draw[ar] (i)--(e); \draw[ar] (e)--(d); \draw[ar] (d)--(a); \draw[ar] (a)--(s);
+  \draw[ar] (s)--(r); \draw[ar] (r)--(c); \draw[ar] (c)--(m); \draw[ar] (m)--node[right,lab]{replan} (d);
+  \node[famber, text width=5.6cm] (A) at (2.9,-1.5) {\textbf{A} Lagrangian: $T+\lambda\max(0,E-B)$};
+  \node[famber, text width=6.0cm] (B) at (9.3,-1.5) {\textbf{B} Budget-conditioned: input $b_t=(B-E_t)/B$};
+\end{tikzpicture}\\[1mm]
+{\scriptsize \colorbox{gray!13}{\strut kept from base~\cite{base}}\;\colorbox{Teal!14}{\strut new}\;\colorbox{Amber!24}{\strut candidate method}}
+\end{frame}
+
+\begin{frame}{3 \,Summary 3/3: What the Mid-Sem Presentation Showed}
+\centering
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.56\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/prev/p-06.png}}\\[0.5mm]
+{\scriptsize Time--energy illustration (made-up numbers, from the mid-sem deck)}
+\end{column}
+\begin{column}{0.40\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/gazebo.png}}\\[0.5mm]
+{\scriptsize Gazebo desert testbed with a 4-wheel UGV~\cite{gazebo}}
+\end{column}
+\end{columns}
+\vspace{3mm}
+\begin{tikzpicture}\node[famber, text width=11.5cm]{Evidence at that stage: an \textbf{illustration} and a \textbf{testbed}, no experimental results.};\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{4 \,Challenges and Limits Before Mid-Sem $\rightarrow$ What We Did About Them}
+\centering
+\begin{tikzpicture}[font=\scriptsize]
+  \foreach \i/\l/\r in {
+    0/{No implementation, only a plan}/{Simulator + learned policy, 35 tests},
+    1/{Base method not verified}/{Compared with \cite{base} on its own map},
+    2/{Unknown details: $T_R$, road map}/{Confirmed from the authors' code~\cite{code}},
+    3/{Only tree roads: no detours}/{Maps with loops: ring, border, district},
+    4/{Energy gain only illustrated}/{Measured: 4 maps $\times$ 3 seeds $\times$ 100 instances},
+    5/{Physics not validated}/{3D replay and Gazebo replay of the plans}} {
+    \node[fred, text width=4.6cm] (l\i) at (0,-\i*1.05) {\l};
+    \ifnum\i=5 \node[famber, text width=5.2cm] (r\i) at (8.9,-\i*1.05) {\r};
+    \else \node[fteal, text width=5.2cm] (r\i) at (8.9,-\i*1.05) {\r}; \fi
+    \draw[ar] (l\i) -- (r\i);}
+  \node[lab] at (0,0.7) {before mid-sem}; \node[lab] at (8.9,0.7) {after mid-sem};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{5 \,After Mid-Sem: The Plan Followed}
+\centering
+\begin{tikzpicture}
+  \node[fteal, text width=2.2cm] (a) at (0,0)    {\textbf{M1}\\ Reproduce the base};
+  \node[fteal, text width=2.2cm] (b) at (2.9,0)  {\textbf{M2}\\ Energy accounting};
+  \node[fteal, text width=2.2cm] (c) at (5.8,0)  {\textbf{M3}\\ Dynamic roads + replanning};
+  \node[fteal, text width=2.2cm] (d) at (8.7,0)  {\textbf{M4}\\ Train, evaluate, ablate};
+  \node[fnavy, text width=2.2cm] (e) at (11.6,0) {Analyse and demo};
+  \foreach \x/\y in {a/b,b/c,c/d,d/e} \draw[ar] (\x) -- (\y);
+  \foreach \x/\t in {a/{close to \cite{base} on its map}, b/{E = flight + hover}, c/{events + masks}, d/{4 maps, 3 seeds}, e/{3D and Gazebo replay}}
+    \node[lab, below=3mm of \x] {\t};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{5 \,Step 1: Reproduce the Base on Its Own Map (M1)}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.58\textwidth}
+\includegraphics[width=\linewidth]{assets/fig_tableI.png}
+\end{column}
+\begin{column}{0.40\textwidth}
+\vspace{1mm}
+\begin{tikzpicture}[node distance=3.5mm]
+  \node[fgray, text width=3.7cm] (a) {Authors' code~\cite{code}};
+  \node[fteal, text width=3.7cm, below=of a] (b) {28 road points, 3 chains\\ \cmark};
+  \node[fteal, text width=3.7cm, below=of b] (c) {$T_R=900$\,s, wait rules\\ \cmark};
+  \node[fnavy, text width=3.7cm, below=of c] (d) {Our simulator and policy};
+  \draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d);
+\end{tikzpicture}
+\end{column}
+\end{columns}
+{\scriptsize Within about 10\% of \cite{base} for three of four teams; 4U-2G is still 9 to 14\% slower even after 3000 training steps (3 seeds).}
+\end{frame}
+
+\begin{frame}{5 \,Step 2: The Simulator (M2)}
+\centering
+\begin{tikzpicture}
+  \node[fb, text width=2.1cm] (a) at (0,1.5)    {Round starts: UAVs ordered by time};
+  \node[fb, text width=2.3cm] (b) at (2.9,1.5)  {Each UAV flies one sortie (fuel mask)};
+  \node[fb, text width=2.0cm] (c) at (5.7,1.5)  {Lands at a rendezvous};
+  \node[fb, text width=2.5cm] (d) at (8.6,1.5)  {UGVs serve landed UAVs, one at a time};
+  \node[famber, text width=2.4cm] (e) at (11.6,1.5) {UGV drives on the \emph{current} roads};
+  \node[fteal, text width=5.0cm] (f) at (5.7,-0.4) {Energy ledger: flight + hover waiting};
+  \node[fred, text width=2.4cm] (ev) at (11.6,-0.4) {Road events: slow or blocked};
+  \draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d); \draw[ar] (d)--(e);
+  \draw[ar] (e.south) -- ++(0,-0.35) -| (f.east);
+  \draw[ar] (f.west) -| node[pos=0.25,below,lab]{next round} (a.south);
+  \draw[arr] (ev) -- (e);
+\end{tikzpicture}\\[2mm]
+{\small 35 automated tests, including a hand-checkable 1U-1G case.}
+\end{frame}
+
+\begin{frame}{5 \,Step 3: Event-Triggered Replanning (M3)}
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.62\textwidth}
+\centering
+\begin{tikzpicture}
+  \node[famber, text width=3.0cm] (a) at (0,3.3) {Road event observed};
+  \node[fb, text width=3.0cm] (b) at (0,2.35) {Update the road graph};
+  \node[fb, text width=3.0cm] (c) at (0,1.4) {Re-time the remaining plan};
+  \node[dia, text width=2.0cm, minimum height=1.1cm] (d) at (0,0.1) {Plan still\\valid?};
+  \node[fteal, text width=2.6cm] (e) at (4.3,0.1) {Replan remaining tasks (keep completed route)};
+  \node[fgray, text width=2.6cm] (f) at (0,-1.4) {Keep the plan};
+  \node[fred, text width=2.7cm] (g) at (4.3,1.6) {Invalid if: unreachable, over budget, or UAV waits 5 min longer};
+  \draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d);
+  \draw[arg] (d.east) -- node[above,lab]{no} (e.west);
+  \draw[ar] (d.south) -- node[right,lab]{yes} (f.north);
+  \draw[ar, dashed] (g.south) -- (e.north);
+\end{tikzpicture}
+\end{column}
+\begin{column}{0.35\textwidth}
+\vspace{2mm}\small
+\begin{tabular}{@{}P{1.9cm}P{2.2cm}@{}}
+\toprule
+\textbf{Controller} & \textbf{Replans when}\\
+\midrule
+Open-loop & never\\[1mm]
+Periodic & every recharge\\[1mm]
+\textbf{Event-triggered} & only if the plan breaks\\
+\bottomrule
+\end{tabular}\\[3mm]
+{\footnotesize A UAV with a stranded rendezvous may divert on its remaining battery.}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{5 \,Step 4: Learning the Policies (M4)}
+\centering
+\begin{tikzpicture}
+  \node[fgray, text width=2.1cm] (a) at (-0.3,0.9)    {Clone the rule policy (imitation)};
+  \node[fteal, text width=2.4cm] (b) at (2.7,0.9) {REINFORCE on time: \textbf{P0}, the base};
+  \draw[ar] (a)--(b);
+  \node[fb, text width=3.2cm]    (v1) at (6.9,2.5) {P0+ control: same extra training};
+  \node[fb, text width=3.2cm]    (v2) at (6.9,1.5) {P2: fixed penalty $T+\alpha E$};
+  \node[famber, text width=3.2cm] (v3) at (6.9,0.5) {P3 (A): Lagrangian};
+  \node[famber, text width=3.2cm] (v4) at (6.9,-0.5) {P4 (B): budget input};
+  \foreach \p in {v1,v2,v3,v4} \draw[ar] (b.east) -- (\p.west);
+  \node[fteal, text width=3.2cm] (p1) at (11.2,0.9) {P1 (at inference): sample $N$ routes, keep the fastest with $E\le B$};
+  \draw[ar, dashed] (b.south) -- ++(0,-1.3) -| (p1.south);
+\end{tikzpicture}\\[2mm]
+{\small All variants start from the same P0, so differences come from the method.}
+\end{frame}
+
+\begin{frame}{5 \,Step 5: Experimental Design}
+\centering
+\includegraphics[height=0.56\textheight]{assets/fig_maps.png}\\[0.5mm]
+{\scriptsize Road maps used (squares = ground points, circles = aerial tasks; shaded strip and dashed line = border).}\\[1.5mm]
+\chip{Teal}{4 maps, 4 team sizes}\;\chip{Teal}{3 training seeds}\;\chip{Teal}{100 test instances}\;\chip{Teal}{18 road events}\;\chip{Amber}{Kaggle CPU, about 3 h per map}\\[1.5mm]
+{\scriptsize 18 events = \{blocked, slow\} $\times$ \{low, medium, high\} $\times$ \{early, middle, late\}}
+\end{frame}
+
+\begin{frame}{6 \,Result 1: Road Events Really Hurt}
+\centering
+\includegraphics[width=0.78\linewidth]{assets/fig_damage.png}\\[1mm]
+{\small The border-surveillance map is the most sensitive; the radial map, full of detours, the least.}
+\end{frame}
+
+\begin{frame}{6 \,Result 2: Replanning Recovers Time and Energy}
+\centering
+\includegraphics[width=0.88\linewidth]{assets/fig_replan_gain.png}\\[0.5mm]
+\begin{tikzpicture}\node[fteal, text width=11.5cm]{Better than open-loop in \textbf{all 12} map--seed combinations: about 15 to 41 min and 260 to 1000 kJ saved on average.};\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{6 \,Result 3: Event-Triggered Matches Periodic, With Fewer Replans}
+\centering
+\includegraphics[width=0.88\linewidth]{assets/fig_event_vs_periodic.png}\\[0.5mm]
+\begin{tikzpicture}\node[fteal, text width=11.5cm]{Same mission time (within 0.3 min) with 1 to 3 fewer replans per mission on every map.};\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{6 \,Result 4: Why the Energy Methods Have So Little to Gain}
+\centering
+\includegraphics[width=0.88\linewidth]{assets/fig_tradeoff.png}\\[1mm]
+\begin{tikzpicture}[font=\scriptsize]
+  \node[famber, text width=2.5cm] (a) at (0,0)  {Hover waiting is about half of $E$};
+  \node[fgray,  text width=2.5cm] (b) at (3.4,0) {Faster routes wait less};
+  \node[fgray,  text width=2.5cm] (c) at (6.8,0) {Fastest $\approx$ lowest-energy route};
+  \node[fred,   text width=3.0cm] (d) at (10.4,0){No trade-off to learn (H1)};
+  \foreach \x/\y in {a/b,b/c,c/d} \draw[ar] (\x)--(\y);
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{6 \,Result 5: Candidates A and B Versus Their Control}
+\centering
+\includegraphics[width=0.95\linewidth]{assets/fig_candidates.png}\\[0.5mm]
+{\small A and B are indistinguishable from an equally trained control; \textbf{sampling with a budget filter (P1)} is far better on every map.}
+\end{frame}
+
+\begin{frame}{6 \,Result 6: A Lever That Realises the Idea}
+\centering
+\begin{tikzpicture}[x=0.118cm, y=1cm]
+  \node[anchor=east, font=\scriptsize\bfseries] at (-1,3.45) {Before};
+  \fill[Midnight] (0,3.2) rectangle (24,3.7); \fill[Amber] (24,3.2) rectangle (40,3.7); \fill[gray!45] (40,3.2) rectangle (55,3.7);
+  \node[font=\tiny, text=white] at (12,3.45) {flying}; \node[font=\tiny] at (32,3.45) {hovering}; \node[font=\tiny] at (47.5,3.45) {charging};
+  \node[anchor=east, font=\scriptsize\bfseries] at (-1,1.85) {After};
+  \fill[gray!25] (0,1.6) rectangle (16,2.1); \fill[Midnight] (16,1.6) rectangle (40,2.1); \fill[gray!45] (40,1.6) rectangle (55,2.1);
+  \node[font=\tiny] at (8,1.85) {waits on the ground}; \node[font=\tiny, text=white] at (28,1.85) {flying}; \node[font=\tiny] at (47.5,1.85) {charging};
+  \fill[Teal!70] (0,0.2) rectangle (40,0.7); \fill[gray!45] (40,0.2) rectangle (55,0.7);
+  \node[anchor=east, font=\scriptsize\bfseries] at (-1,0.45) {UGV};
+  \node[font=\tiny] at (20,0.45) {driving to the rendezvous}; \node[font=\tiny] at (47.5,0.45) {charging};
+  \draw[dashed, Midnight!60] (40,0.1) -- (40,3.9);
+  \node[lab] at (40,4.1) {UGV arrives: same moment in both};
+  \draw[->] (0,-0.2) -- (60,-0.2); \node[font=\tiny, below] at (30,-0.2) {mission time};
+\end{tikzpicture}\\[4mm]
+\begin{tikzpicture}
+  \node[famber, text width=3.2cm] (a) at (0,0)    {UAV expects to arrive before the UGV};
+  \node[fteal,  text width=3.2cm] (b) at (3.9,0)  {Delay take-off by the expected wait};
+  \node[fgray,  text width=3.2cm] (c) at (7.8,0)  {Arrives as the UGV arrives: no hovering};
+  \node[fnavy,  text width=3.2cm] (d) at (11.7,0) {Same mission time, far less energy};
+  \foreach \x/\y in {a/b,b/c,c/d} \draw[ar] (\x)--(\y);
+\end{tikzpicture}\\[2mm]
+{\small Assumption: a UAV can wait on the ground at its charging point for free, and a delay is predicted from the road state it knows.}
+\end{frame}
+
+\begin{frame}{6 \,Result 6 (cont.): Just-in-Time Departure}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_jit.png}\\[0.5mm]
+\begin{tikzpicture}\node[fteal, text width=12.8cm]{Base policy, 4 maps $\times$ 3 seeds, 60 instances: \textbf{53 to 74\% less energy with the mission time unchanged} ($+0.00$\,min). With road events some waits are unforeseen, so 11 to 36\% of the energy is still hovering.};\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{6 \,Result 6 (cont. 2): More UAVs per UGV, More to Save}
+\centering
+\includegraphics[width=0.93\linewidth]{assets/fig_jit_teams.png}\\[0.5mm]
+{\small The saving follows how much the UAVs wait: about 10\% with one UAV, 40 to 54\% with two, about 70\% with four. The mission time is unchanged in every case; with sampling and a budget filter it saves 46\% and is 0.8\,min faster.}
+\end{frame}
+
+\begin{frame}{6 \,Result 6 (cont. 3): Sampling and Just-in-Time Together}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_headline.png}\\[0.5mm]
+{\small 4 maps $\times$ 3 seeds, 2U-1G. Sampling the policy and keeping the fastest route within budget cuts time by 20\%; just-in-time departure removes 65\% of the energy; together \textbf{both gains add up and the budget is met} (0\% violations, 2\% with events). Re-checking the UGV's arrival at takeoff removes two thirds of the remaining hover energy (241 to 80\,kJ).}
+\end{frame}
+
+\begin{frame}{6 \,Result 7: The Same Holds for Other Team Sizes}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_teams.png}\\[0.5mm]
+{\small 1U-1G to 4U-2G, 3 seeds each (ring-road map). Gains are largest when several UAVs share one UGV (2U-1G, 4U-2G) and small with a single UAV, where the UGV is rarely the bottleneck. Candidates A and B again equal the control.}
+\end{frame}
+
+\begin{frame}{6 \,Result 8: Larger Instances Without Retraining}
+\centering
+\includegraphics[width=0.93\linewidth]{assets/fig_stageC.png}\\[0.5mm]
+{\small 45 and 75 tasks, trained on 15: two seeds still work and replanning still helps. The outlier seed is \textbf{a bad base policy, not a size effect} (it loops at 15 tasks too). A loop-detection fallback to the rule policy removes all its failures and leaves the good seeds untouched, but it stays slower.}
+\end{frame}
+
+\begin{frame}{6 \,Result 9: Baselines and Sampled Decoding (Paper's Map)}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_baselines.png}\\[0.5mm]
+{\small Our GLS / Tabu / SA reimplementation lands in the paper's range (close for 1U-1G, $\pm$10 to 20\% otherwise). With 10{,}240 samples we reach 135 to 197\,min, below the paper's sampled results, but our map and instances are reconstructions, so this is not a claim to beat~\cite{base}.}
+\end{frame}
+
+\begin{frame}{6 \,Two Fixes We Tried That Did Not Work}
+\centering
+\begin{tikzpicture}
+  \node[fgray, text width=2.5cm] (a) at (0,1.9)   {Sample 32 routes per instance};
+  \node[fteal, text width=2.5cm] (b) at (3.3,1.9) {Keep the best under the budget cost};
+  \node[fb, text width=2.5cm] (c) at (6.6,1.9)    {Train the policy to imitate it};
+  \node[fred, text width=3.6cm] (d) at (10.6,1.9) {Greedy policy: no gain, unstable};
+  \draw[ar] (a)--(b); \draw[ar] (b)--(c); \draw[ar] (c)--(d);
+  \node[lab, text width=3.4cm] at (3.3,1.0) {best routes are about 25\% faster than the average sample};
+  \node[lab, text width=3.4cm] at (10.6,1.0) {validation time moves between 182 and 240 min};
+  \node[fgray, text width=3.4cm] (e) at (1.3,-0.4) {Lagrangian multiplier\\ (cap raised to 50)};
+  \node[fteal, text width=4.4cm] (f) at (6.4,-0.4) {$\lambda$ now settles: about 5 at $\beta{=}1.0$, about 13 at $\beta{=}0.9$};
+  \node[famber, text width=4.0cm] (g) at (11.4,-0.4) {budget 0.9 is still violated (+16\%)};
+  \draw[ar] (e)--(f); \draw[ar] (f)--(g);
+\end{tikzpicture}\\[3mm]
+{\small Search distillation: negative result. $\lambda$: the convergence criterion is met, the constraint is not.}
+\end{frame}
+
+\begin{frame}{6 \,The Simulation We Can Show}
+\centering
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/viewer_loop.jpg}}\\[0.5mm]
+{\scriptsize Best case: replanning saves 87 min (left: open-loop, right: replanning)}
+\end{column}
+\begin{column}{0.48\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/viewer_stress.jpg}}\\[0.5mm]
+{\scriptsize Cut road: the open-loop mission fails}
+\end{column}
+\end{columns}
+\vspace{2mm}
+\begin{tikzpicture}\node[fgray, text width=12.5cm]{Interactive 3D replay: 18 scenarios on 3 maps; each setting shows the \textbf{best}, a \textbf{typical} and the \textbf{worst} case, plus failures. Gazebo videos replay the plans on flat ground and on real terrain.};\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{6 \,Gazebo Test Bed: Replaying the Plans in Physics}
+\centering
+\begin{tikzpicture}[font=\scriptsize]
+  \node[fgray, text width=2.3cm] (a) at (0,0) {Planned mission (legs, drives, services)};
+  \node[fb,    text width=2.3cm] (b) at (3.1,0) {World: roads, tasks, events};
+  \node[fteal, text width=2.7cm] (c) at (6.3,0) {Wheeled UGV, flying UAV, lock-step replay};
+  \node[famber,text width=2.7cm] (d) at (9.7,0) {Compare: time, energy, UGV timing};
+  \foreach \x/\y in {a/b,b/c,c/d} \draw[ar] (\x)--(\y);
+\end{tikzpicture}\\[2mm]
+\begin{columns}[T,onlytextwidth]
+\begin{column}{0.48\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/flat_border_event.jpg}}\\[0.5mm]
+{\scriptsize Flat ground, border map}
+\end{column}
+\begin{column}{0.48\textwidth}\centering
+\fbox{\includegraphics[width=\linewidth]{assets/terrain_border_event.jpg}}\\[0.5mm]
+{\scriptsize Real terrain (open elevation data, 144\,m relief)}
+\end{column}
+\end{columns}
+{\scriptsize UGVs are wheeled vehicles with contact physics; a UAV is served only after the UGV has actually arrived.}
+\end{frame}
+
+\begin{frame}{6 \,Gazebo Confirms the Plans}
+\centering
+\includegraphics[width=0.97\linewidth]{assets/fig_gazebo.png}\\[0.5mm]
+{\small 22 replays (16 on flat ground, 6 on real terrain; border, paper and ring-road maps; open-loop and event-triggered). Mission time differs from the plan by at most 0.8\,min (0.12\% flat, 0.19\% terrain on average) and UAV energy by at most 0.5\%. The UGV reaches rendezvous 11 to 16\,s late on average, so the plans are physically achievable. It is a consistency check of the plans, not a test of the learned policy.}
+\end{frame}
+
+\begin{frame}{6 \,Did the Hypotheses Hold?}
+\centering\small
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{@{}P{5.8cm}cP{5.4cm}@{}}
+\toprule
+\textbf{Hypothesis} & & \textbf{Evidence}\\
+\midrule
+H1 energy falls, time barely rises & \pmark & \xmark\ for routes (time and energy move together); \cmark\ for departure timing: $-$53 to $-$74\% energy, $+0$ min\\
+H2 constrained beats fixed penalty & \xmark & A and B equal the control on all maps\\
+H3 more disruption, more energy & \cmark & up to +29\% energy, early events worst\\
+H4 same reliability, fewer replans & \cmark & same time, 1 to 3 fewer replans\\
+\bottomrule
+\end{tabular}\\[3mm]
+{\small Failures appear only when a bridge is cut and the map is disconnected.}
+\end{frame}
+
+\begin{frame}{6 \,Planned Versus Delivered}
+\centering\small
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}P{3.7cm}cP{7.1cm}@{}}
+\toprule
+\textbf{Milestone (from mid-sem)} & & \textbf{What was delivered}\\
+\midrule
+M1 Reproduce the base & \pmark & within 10\% of \cite{base} on its own map for 3 of 4 teams; 4U-2G 9 to 14\% slower\\
+M2 Energy accounting, $\lambda$ & \pmark & $\lambda$ settles at feasible budgets; budget 0.9 is still violated; no gain over control\\
+M3 Dynamic roads, event replanning & \cmark & works on 4 maps; matches periodic with fewer replans\\
+M4 Ablations, seeds, scaling & \cmark & 3 seeds, 4 maps, 4 team sizes, 45 and 75 tasks\\
+Gate: do road events matter (H3)? & \cmark & yes: up to $+29\%$ energy, early events worst\\
+Added: just-in-time, fallback, baselines & \cmark & $-18$ to $-69\%$ energy at no time cost; with sampling $-20\%$ time and $-65\%$ energy; fallback; GLS, Tabu, SA\\
+Gazebo physics testbed & \pmark & plans replayed in Gazebo (wheeled UGV, real terrain); the policy itself is not run inside it\\
+\bottomrule
+\end{tabular}\\[3mm]
+{\scriptsize \cmark\ delivered \quad \pmark\ partly \quad \xmark\ not done}
+\end{frame}
+
+\begin{frame}{6 \,Limitations and Future Work}
+\centering
+\begin{tikzpicture}[font=\scriptsize]
+  \foreach \i/\l/\r in {
+    0/{4U-2G base policy 9 to 14\% slower than \cite{base}}/{More training did not help (211 to 210\,min); search does},
+    1/{Energy methods and distillation: no gain}/{Checkpoint selection, landed-waiting studies},
+    2/{Replans only at recharge boundaries}/{Mid-round replanning, fuel reserve},
+    3/{Bad seed: fallback fixes failures, still slower}/{Pick the best of several seeds},
+    4/{Gazebo replays plans; policy not in the loop}/{Run the policy and replanner inside Gazebo~\cite{gazebo}}} {
+    \node[fred, text width=5.2cm] (l\i) at (0,-\i*1.0) {\l};
+    \node[fteal, text width=5.0cm] (r\i) at (8.6,-\i*1.0) {\r};
+    \draw[ar] (l\i) -- (r\i);}
+  \node[lab] at (0,0.7) {limitation}; \node[lab] at (8.6,0.7) {next step};
+\end{tikzpicture}
+\end{frame}
+
+\begin{frame}{Conclusion}
+\centering
+\begin{tikzpicture}
+  \node[fred,  text width=2.0cm] (a) at (0,0)    {Problem: energy and changing roads};
+  \node[fgray, text width=2.0cm] (b) at (2.6,0)  {Gap in the literature};
+  \node[fteal, text width=2.0cm] (c) at (5.2,0)  {Simulator, models, replanning};
+  \node[fteal, text width=2.0cm] (d) at (7.8,0)  {4 maps $\times$ 3 seeds};
+  \node[fnavy, text width=3.6cm] (e) at (11.2,0) {Replanning, just-in-time departure and sampling pay off; learned energy-awareness does not};
+  \foreach \x/\y in {a/b,b/c,c/d,d/e} \draw[ar] (\x)--(\y);
+\end{tikzpicture}\\[7mm]
+\begin{block}{Take-away}
+Roads that change cost real time and energy: \textbf{event-triggered replanning} recovers them with few replans, \textbf{just-in-time departure} removes more than half of the energy at no cost in time, and together with \textbf{sampling and a budget filter} the mission is 20\% faster, uses 65\% less energy and meets the budget; Gazebo confirms the plans to within a fraction of a percent.
+\end{block}
+\centering {\Large Thank you. Questions and discussion.}
+\end{frame}
+
+\begin{frame}[allowframebreaks]{References}
+\scriptsize
+\begin{thebibliography}{99}
+\bibitem{base} M. S. Mondal, S. Ramasamy, L. Russo, J. D. Humann, J. M. Dotterweich, and P. Bhounsule, ``How to coordinate UAVs and UGVs for efficient mission planning? Optimizing energy-constrained cooperative routing with a DRL framework,'' arXiv:2504.21111, 2025.
+\bibitem{maini} P. Maini, K. Sundar, M. Singh, S. Rathinam, and P. B. Sujit, ``Cooperative aerial--ground vehicle route planning with fuel constraints for coverage applications,'' \emph{IEEE Trans. Aerosp. Electron. Syst.}, vol. 55, no. 6, pp. 3016--3028, 2019.
+\bibitem{mrs} M. S. Mondal \emph{et al.}, ``Optimizing fuel-constrained UAV-UGV routes for large scale coverage: Bilevel planning in heterogeneous multi-agent systems,'' in \emph{Proc. Int. Symp. Multi-Robot Multi-Agent Syst. (MRS)}, 2023, pp. 114--120.
+\bibitem{fan} M. Fan \emph{et al.}, ``Deep reinforcement learning for UAV routing in the presence of multiple charging stations,'' \emph{IEEE Trans. Veh. Technol.}, vol. 72, no. 5, pp. 5732--5746, 2023.
+\bibitem{shi} G. Shi \emph{et al.}, ``Risk-aware UAV--UGV rendezvous with chance-constrained Markov decision process,'' in \emph{Proc. IEEE Conf. Decis. Control (CDC)}, 2022, pp. 180--187.
+\bibitem{lin} X. Lin, Y. Yaz{\i}c{\i}o\u{g}lu, and D. Aksaray, ``Robust planning for persistent surveillance with energy-constrained UAVs and mobile charging stations,'' \emph{IEEE Robot. Autom. Lett.}, vol. 7, no. 2, pp. 4157--4164, 2022.
+\bibitem{icra} M. S. Mondal \emph{et al.}, ``Risk-aware energy-constrained UAV--UGV cooperative routing using attention-guided reinforcement learning,'' in \emph{Proc. IEEE Int. Conf. Robot. Autom. (ICRA)}, 2025, pp. 13000--13006.
+\bibitem{kool} W. Kool, H. van Hoof, and M. Welling, ``Attention, learn to solve routing problems!'' arXiv:1803.08475, 2018.
+\bibitem{williams} R. J. Williams, ``Simple statistical gradient-following algorithms for connectionist reinforcement learning,'' \emph{Mach. Learn.}, vol. 8, pp. 229--256, 1992.
+\bibitem{hurwitz} A. M. Hurwitz, J. M. Dotterweich, and T. A. Rocks, ``Mobile robot battery life estimation: Battery energy use of an unmanned ground vehicle,'' in \emph{Energy Harvesting and Storage: Materials, Devices, and Applications XI}, SPIE, vol. 11722, 2021, pp. 24--40.
+\bibitem{gazebo} N. Koenig and A. Howard, ``Design and use paradigms for Gazebo, an open-source multi-robot simulator,'' in \emph{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, vol. 3, 2004, pp. 2149--2154.
+\bibitem{code} M. S. Mondal \emph{et al.}, ``multi-uav-ugv-cooperative-routing-drl,'' source code, GitHub. [Online]. Available: \url{https://github.com/imsafwan/multi-uav-ugv-cooperative-routing-drl}
+\end{thebibliography}
+\end{frame}
+
+\end{document}
