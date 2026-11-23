@@ -1,0 +1,4 @@
+paper 1U-1G N=  1024: greedy  228.1 | best-of-N  199.5 ± 32.8 (E 1464)  [401s]
+paper 2U-1G N=  1024: greedy  209.8 | best-of-N  160.2 ± 26.6 (E 2726)  [360s]
+paper 2U-2G N=  1024: greedy  185.1 | best-of-N  138.5 ± 23.6 (E 2190)  [408s]
+paper 4U-2G N=  1024: greedy  219.0 | best-of-N  140.7 ± 30.7 (E 4594)  [457s]

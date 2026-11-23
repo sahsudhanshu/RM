@@ -1,0 +1,95 @@
+[imitate] step    0  nll/decision 1.6855
+[imitate] step   25  nll/decision 1.0100
+[imitate] step   50  nll/decision 1.2104
+[imitate] step   75  nll/decision 0.8235
+[imitate] step  100  nll/decision 0.7143
+[imitate] step  125  nll/decision 0.5886
+[imitate] step  150  nll/decision 0.5430
+[imitate] step  175  nll/decision 0.4636
+[imitate] step  200  nll/decision 0.4090
+[imitate] step  225  nll/decision 0.3702
+[imitate] step  250  nll/decision 0.3374
+[imitate] step  275  nll/decision 0.3092
+[imitate] step  300  nll/decision 0.2912
+[imitate] step  325  nll/decision 0.2761
+[imitate] step  350  nll/decision 0.2626
+[imitate] step  375  nll/decision 0.2758
+[imitate] step  399  nll/decision 0.2597
+[imitate] step    0  nll/decision 0.2559
+[imitate] step   25  nll/decision 0.2510
+[imitate] step   50  nll/decision 0.2592
+[imitate] step   75  nll/decision 0.2604
+[imitate] step  100  nll/decision 0.2522
+[imitate] step  125  nll/decision 0.2556
+[imitate] step  150  nll/decision 0.2514
+[imitate] step  175  nll/decision 0.2510
+[imitate] step  200  nll/decision 0.2622
+[imitate] step  225  nll/decision 0.2322
+[imitate] step  250  nll/decision 0.2435
+[imitate] step  275  nll/decision 0.2449
+[imitate] step  300  nll/decision 0.2332
+[imitate] step  325  nll/decision 0.2254
+[imitate] step  350  nll/decision 0.2161
+[imitate] step  375  nll/decision 0.2194
+[imitate] step  399  nll/decision 0.2303
+after imitation (round 0): greedy T 162.5, fail 0.00 | teacher T 154.1
+[P0] step   20  T  176.1  E   3339  cost   176.1  val T  165.5 E   3143 fail 0.00  viol +0.231  lam 0.00  [   49s]
+[P0] step   40  T  169.2  E   3165  cost   169.2  val T  164.7 E   3113 fail 0.00  viol +0.288  lam 0.00  [   95s]
+[P0] step   60  T  170.7  E   3220  cost   170.7  val T  164.1 E   3111 fail 0.00  viol +0.243  lam 0.00  [  137s]
+[P0] step   80  T  171.3  E   3246  cost   171.3  val T  164.3 E   3098 fail 0.00  viol +0.280  lam 0.00  [  178s]
+[P0] step  100  T  178.2  E   3394  cost   178.2  val T  162.3 E   3056 fail 0.00  viol +0.399  lam 0.00  [  224s]
+[P0] step  120  T  171.7  E   3216  cost   171.7  val T  165.5 E   3118 fail 0.00  viol +0.303  lam 0.00  [  260s]
+[P0] step  140  T  175.6  E   3311  cost   175.6  val T  163.5 E   3084 fail 0.00  viol +0.327  lam 0.00  [  297s]
+[P0] step  160  T  161.8  E   3033  cost   161.8  val T  163.3 E   3088 fail 0.00  viol +0.277  lam 0.00  [  338s]
+[P0] step  180  T  177.8  E   3369  cost   177.8  val T  163.0 E   3074 fail 0.00  viol +0.286  lam 0.00  [  379s]
+[P0] step  200  T  175.8  E   3351  cost   175.8  val T  163.4 E   3084 fail 0.00  viol +0.310  lam 0.00  [  420s]
+[P0] step  220  T  186.4  E   3589  cost   186.4  val T  162.6 E   3071 fail 0.00  viol +0.361  lam 0.00  [  468s]
+[P0] step  240  T  173.8  E   3277  cost   173.8  val T  160.8 E   3042 fail 0.00  viol +0.319  lam 0.00  [  506s]
+[P0] step  260  T  183.6  E   3433  cost   183.6  val T  160.4 E   3019 fail 0.00  viol +0.254  lam 0.00  [  544s]
+[P0] step  280  T  170.1  E   3191  cost   170.1  val T  163.6 E   3080 fail 0.00  viol +0.266  lam 0.00  [  581s]
+[P0] step  300  T  175.5  E   3334  cost   175.5  val T  161.4 E   3054 fail 0.00  viol +0.357  lam 0.00  [  621s]
+[P0] step  320  T  177.7  E   3345  cost   177.7  val T  163.1 E   3073 fail 0.00  viol +0.277  lam 0.00  [  668s]
+[P0] step  340  T  174.8  E   3308  cost   174.8  val T  162.2 E   3058 fail 0.00  viol +0.226  lam 0.00  [  706s]
+[P0] step  360  T  172.8  E   3294  cost   172.8  val T  161.0 E   3023 fail 0.00  viol +0.293  lam 0.00  [  742s]
+[P0] step  380  T  176.4  E   3353  cost   176.4  val T  160.2 E   3004 fail 0.00  viol +0.353  lam 0.00  [  774s]
+[P0] step  400  T  176.3  E   3337  cost   176.3  val T  160.5 E   3019 fail 0.00  viol +0.244  lam 0.00  [  808s]
+[P0] step  420  T  174.1  E   3281  cost   174.1  val T  159.8 E   2987 fail 0.00  viol +0.336  lam 0.00  [  851s]
+[P0] step  440  T  172.0  E   3205  cost   172.0  val T  159.5 E   2978 fail 0.00  viol +0.274  lam 0.00  [  881s]
+[P0] step  460  T  170.6  E   3200  cost   170.6  val T  159.9 E   3015 fail 0.00  viol +0.242  lam 0.00  [  923s]
+[P0] step  480  T  163.0  E   3053  cost   163.0  val T  160.6 E   3014 fail 0.00  viol +0.195  lam 0.00  [  959s]
+[P0] step  500  T  180.2  E   3386  cost   180.2  val T  160.7 E   3033 fail 0.00  viol +0.310  lam 0.00  [ 1006s]
+[P0] step  520  T  169.9  E   3200  cost   169.9  val T  159.0 E   2969 fail 0.00  viol +0.233  lam 0.00  [ 1049s]
+[P0] step  540  T  176.7  E   3381  cost   176.7  val T  159.9 E   2985 fail 0.00  viol +0.279  lam 0.00  [ 1083s]
+[P0] step  560  T  164.6  E   3094  cost   164.6  val T  156.2 E   2925 fail 0.00  viol +0.174  lam 0.00  [ 1124s]
+[P0] step  580  T  184.5  E   3503  cost   184.5  val T  151.2 E   2809 fail 0.00 *  viol +0.308  lam 0.00  [ 1162s]
+[P0] step  600  T  174.7  E   3309  cost   174.7  val T  157.2 E   2964 fail 0.00  viol +0.322  lam 0.00  [ 1202s]
+[P0] step  620  T  172.8  E   3269  cost   172.8  val T  158.0 E   2926 fail 0.00  viol +0.369  lam 0.00  [ 1251s]
+[P0] step  640  T  163.8  E   3047  cost   163.8  val T  160.1 E   2997 fail 0.00  viol +0.172  lam 0.00  [ 1300s]
+[P0] step  660  T  175.4  E   3301  cost   175.4  val T  153.5 E   2862 fail 0.00  viol +0.256  lam 0.00  [ 1340s]
+[P0] step  680  T  164.5  E   3085  cost   164.5  val T  158.0 E   2983 fail 0.00  viol +0.260  lam 0.00  [ 1390s]
+[P0] step  700  T  168.9  E   3165  cost   168.9  val T  159.9 E   3016 fail 0.00  viol +0.208  lam 0.00  [ 1423s]
+[P0] step  720  T  166.0  E   3140  cost   166.0  val T  158.0 E   2978 fail 0.00  viol +0.228  lam 0.00  [ 1466s]
+[P0] step  740  T  166.2  E   3128  cost   166.2  val T  161.4 E   3022 fail 0.00  viol +0.296  lam 0.00  [ 1514s]
+[P0] step  760  T  165.8  E   3113  cost   165.8  val T  161.0 E   3019 fail 0.00  viol +0.251  lam 0.00  [ 1563s]
+[P0] step  780  T  173.6  E   3304  cost   173.6  val T  166.6 E   3154 fail 0.00  viol +0.224  lam 0.00  [ 1609s]
+[P0] step  800  T  167.5  E   3152  cost   167.5  val T  151.9 E   2834 fail 0.00  viol +0.281  lam 0.00  [ 1656s]
+[P0] step  820  T  168.2  E   3209  cost   168.2  val T  160.8 E   3014 fail 0.00  viol +0.282  lam 0.00  [ 1698s]
+[P0] step  840  T  160.5  E   3027  cost   160.5  val T  158.0 E   2972 fail 0.00  viol +0.231  lam 0.00  [ 1737s]
+[P0] step  860  T  170.0  E   3220  cost   170.0  val T  161.9 E   3077 fail 0.00  viol +0.248  lam 0.00  [ 1777s]
+[P0] step  880  T  172.9  E   3254  cost   172.9  val T  157.8 E   2973 fail 0.00  viol +0.177  lam 0.00  [ 1827s]
+[P0] step  900  T  178.9  E   3404  cost   178.9  val T  157.6 E   2971 fail 0.00  viol +0.322  lam 0.00  [ 1869s]
+[P0] step  920  T  169.0  E   3198  cost   169.0  val T  160.7 E   3040 fail 0.00  viol +0.233  lam 0.00  [ 1915s]
+[P0] step  940  T  172.2  E   3244  cost   172.2  val T  155.9 E   2907 fail 0.00  viol +0.320  lam 0.00  [ 1959s]
+[P0] step  960  T  172.9  E   3288  cost   172.9  val T  157.5 E   2957 fail 0.00  viol +0.298  lam 0.00  [ 1996s]
+[P0] step  980  T  164.2  E   3065  cost   164.2  val T  156.5 E   2919 fail 0.00  viol +0.234  lam 0.00  [ 2040s]
+[P0] step 1000  T  170.0  E   3203  cost   170.0  val T  157.9 E   2995 fail 0.00  viol +0.296  lam 0.00  [ 2085s]
+[P0] step 1020  T  165.8  E   3100  cost   165.8  val T  157.1 E   2967 fail 0.00  viol +0.230  lam 0.00  [ 2131s]
+[P0] step 1040  T  169.3  E   3196  cost   169.3  val T  157.9 E   2972 fail 0.00  viol +0.241  lam 0.00  [ 2172s]
+[P0] step 1060  T  173.0  E   3286  cost   173.0  val T  156.4 E   2938 fail 0.00  viol +0.194  lam 0.00  [ 2219s]
+[P0] step 1080  T  165.9  E   3148  cost   165.9  val T  157.6 E   2967 fail 0.00  viol +0.231  lam 0.00  [ 2256s]
+[P0] step 1100  T  165.4  E   3110  cost   165.4  val T  155.9 E   2929 fail 0.00  viol +0.187  lam 0.00  [ 2291s]
+[P0] step 1120  T  169.8  E   3232  cost   169.8  val T  156.7 E   2945 fail 0.00  viol +0.305  lam 0.00  [ 2324s]
+[P0] step 1140  T  162.4  E   3034  cost   162.4  val T  157.8 E   2985 fail 0.00  viol +0.237  lam 0.00  [ 2357s]
+[P0] step 1160  T  167.2  E   3161  cost   167.2  val T  157.1 E   2970 fail 0.00  viol +0.268  lam 0.00  [ 2390s]
+[P0] step 1180  T  161.6  E   3057  cost   161.6  val T  154.8 E   2934 fail 0.00  viol +0.197  lam 0.00  [ 2423s]
+[P0] step 1200  T  169.4  E   3194  cost   169.4  val T  156.9 E   2976 fail 0.00  viol +0.206  lam 0.00  [ 2456s]

@@ -1,0 +1,47 @@
+[imitate] step    0  nll/decision 1.5208
+[imitate] step   25  nll/decision 1.0625
+[imitate] step   50  nll/decision 0.8582
+[imitate] step   75  nll/decision 0.7712
+[imitate] step  100  nll/decision 0.6926
+[imitate] step  125  nll/decision 0.5770
+[imitate] step  150  nll/decision 0.5237
+[imitate] step  175  nll/decision 0.4780
+[imitate] step  200  nll/decision 0.4512
+[imitate] step  225  nll/decision 0.4439
+[imitate] step  250  nll/decision 0.4091
+[imitate] step  275  nll/decision 0.3981
+[imitate] step  299  nll/decision 0.3700
+[imitate] step    0  nll/decision 0.3854
+[imitate] step   25  nll/decision 0.3767
+[imitate] step   50  nll/decision 0.3692
+[imitate] step   75  nll/decision 0.3693
+[imitate] step  100  nll/decision 0.3448
+[imitate] step  125  nll/decision 0.3176
+[imitate] step  150  nll/decision 0.3026
+[imitate] step  175  nll/decision 0.3131
+[imitate] step  200  nll/decision 0.2905
+[imitate] step  225  nll/decision 0.2815
+[imitate] step  250  nll/decision 0.2974
+[imitate] step  275  nll/decision 0.2870
+[imitate] step  299  nll/decision 0.2842
+after imitation: greedy T 263.9 | teacher T 178.7
+[P0] step   20  T  201.9  E   3315  cost   201.9  val   236.4 (base   288.9)  viol +0.330  lam 0.00  [   33s]
+[P0] step   40  T  193.6  E   3151  cost   193.6  val   178.7 (base   288.9)  viol +0.233  lam 0.00  [   75s]
+[P0] step   60  T  193.0  E   3144  cost   193.0  val   229.2 (base   288.9)  viol +0.245  lam 0.00  [  126s]
+[P0] step   80  T  182.2  E   2957  cost   182.2  val   228.2 (base   288.9)  viol +0.205  lam 0.00  [  177s]
+[P0] step  100  T  188.0  E   3107  cost   188.0  val   227.9 (base   288.9)  viol +0.253  lam 0.00  [  234s]
+[P0] step  120  T  185.6  E   3058  cost   185.6  val   175.2 (base   288.9)  viol +0.215  lam 0.00  [  291s]
+[P0] step  140  T  184.9  E   2978  cost   184.9  val   172.4 (base   288.9)  viol +0.194  lam 0.00  [  349s]
+[P0] step  160  T  181.9  E   2952  cost   181.9  val   274.4 (base   288.9)  viol +0.184  lam 0.00  [  415s]
+[P0] step  180  T  176.0  E   2840  cost   176.0  val   171.5 (base   288.9)  viol +0.126  lam 0.00  [  472s]
+[P0] step  200  T  183.2  E   3007  cost   183.2  val   168.8 (base   288.9)  viol +0.214  lam 0.00  [  542s]
+[P0] step  220  T  173.6  E   2858  cost   173.6  val   170.9 (base   288.9)  viol +0.184  lam 0.00  [  604s]
+[P0] step  240  T  172.9  E   2804  cost   172.9  val   170.2 (base   288.9)  viol +0.106  lam 0.00  [  670s]
+[P0] step  260  T  193.3  E   3147  cost   193.3  val   175.2 (base   288.9)  viol +0.202  lam 0.00  [  746s]
+[P0] step  280  T  210.9  E   3454  cost   210.9  val   232.7 (base   288.9)  viol +0.376  lam 0.00  [  821s]
+[P0] step  300  T  198.4  E   3246  cost   198.4  val   236.6 (base   288.9)  viol +0.276  lam 0.00  [  880s]
+[P0] step  320  T  174.7  E   2849  cost   174.7  val   229.9 (base   288.9)  viol +0.144  lam 0.00  [  948s]
+[P0] step  340  T  174.5  E   2828  cost   174.5  val   177.0 (base   288.9)  viol +0.183  lam 0.00  [ 1018s]
+[P0] step  360  T  189.6  E   3048  cost   189.6  val   176.2 (base   288.9)  viol +0.259  lam 0.00  [ 1079s]
+[P0] step  380  T  192.3  E   3094  cost   192.3  val   172.6 (base   288.9)  viol +0.260  lam 0.00  [ 1149s]
+[P0] step  400  T  173.2  E   2806  cost   173.2  val   174.7 (base   288.9)  viol +0.170  lam 0.00  [ 1215s]

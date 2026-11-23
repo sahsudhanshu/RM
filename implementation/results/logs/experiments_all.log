@@ -1,0 +1,77 @@
+100 cases; B0 = 3469 kJ, T0 = 194.7 min
+B  P0 open-loop (base)                    T  220.7  E   4125  over 1.00  fail 0.000  replans 0.00  [8s]
+B  P0 periodic + road layer               T  209.0  E   3851  over 0.92  fail 0.000  replans 2.45  [10s]
+B  P0 event + road layer                  T  209.1  E   3854  over 0.92  fail 0.000  replans 0.47  [15s]
+B  P0+ (control) open-loop                T  206.9  E   3811  over 0.77  fail 0.001  replans 0.00  [13s]
+B  P0+ (control) event + road layer       T  198.1  E   3623  over 0.72  fail 0.000  replans 0.40  [16s]
+B  P0+ event, road-distance assignment    T  198.1  E   3623  over 0.72  fail 0.000  replans 0.40  [15s]
+B  P4 open-loop                           T  202.1  E   3726  over 0.64  fail 0.001  replans 0.00  [10s]
+B  P4 periodic + road layer               T  190.2  E   3458  over 0.59  fail 0.001  replans 2.23  [14s]
+B  P4 event + road layer                  T  190.2  E   3458  over 0.59  fail 0.001  replans 0.50  [16s]
+B  P4 (road-event trained) event          T  193.3  E   3544  over 0.64  fail 0.001  replans 0.54  [16s]
+B  P0 (road-event trained) event          T  192.7  E   3491  over 0.66  fail 0.000  replans 0.38  [15s]
+B  P3 (beta=0.9) event + road layer       T  190.2  E   3409  over 0.58  fail 0.001  replans 0.33  [15s]
+B  P4 event, road-distance assignment     T  190.2  E   3458  over 0.59  fail 0.001  replans 0.50  [15s]
+B  P0 event, road-distance assignment     T  209.1  E   3854  over 0.92  fail 0.000  replans 0.47  [15s]
+B  P1 route filter, event                 T  167.3  E   2855  over 0.35  fail 0.001  replans 0.37  [132s]
+wrote /home/vichanshu/Desktop/RM/implementation/scripts/../results/U15G5_2U1G/stageB.csv (28500 rows)
+100 cases; B0 = 2744 kJ, T0 = 169.5 min
+A  P0                       beta=0.7  T  169.5  E   2744  over 1.00  fail 0.00  [1s]
+A  P0                       beta=0.8  T  169.5  E   2744  over 1.00  fail 0.00  [1s]
+A  P0                       beta=0.9  T  169.5  E   2744  over 1.00  fail 0.00  [1s]
+A  P0                       beta=1.0  T  169.5  E   2744  over 0.00  fail 0.00  [1s]
+A  P0+ (control)            beta=0.7  T  173.8  E   2843  over 0.97  fail 0.00  [1s]
+A  P0+ (control)            beta=0.8  T  173.8  E   2843  over 0.94  fail 0.00  [1s]
+A  P0+ (control)            beta=0.9  T  173.8  E   2843  over 0.77  fail 0.00  [1s]
+A  P0+ (control)            beta=1.0  T  173.8  E   2843  over 0.48  fail 0.00  [1s]
+A  P1 route filter          beta=0.7  T  138.0  E   2026  over 0.67  fail 0.00  [8s]
+A  P1 route filter          beta=0.8  T  137.1  E   2031  over 0.40  fail 0.00  [8s]
+A  P1 route filter          beta=0.9  T  135.9  E   2054  over 0.12  fail 0.00  [8s]
+A  P1 route filter          beta=1.0  T  135.4  E   2067  over 0.00  fail 0.00  [8s]
+A  P2 fixed penalty         beta=0.7  T  170.0  E   2815  over 0.95  fail 0.00  [1s]
+A  P2 fixed penalty         beta=0.8  T  170.0  E   2815  over 0.87  fail 0.00  [1s]
+A  P2 fixed penalty         beta=0.9  T  170.0  E   2815  over 0.69  fail 0.00  [1s]
+A  P2 fixed penalty         beta=1.0  T  170.0  E   2815  over 0.54  fail 0.00  [1s]
+A  P4 budget-conditioned    beta=0.7  T  173.9  E   2822  over 0.96  fail 0.00  [1s]
+A  P4 budget-conditioned    beta=0.8  T  173.9  E   2822  over 0.92  fail 0.00  [1s]
+A  P4 budget-conditioned    beta=0.9  T  173.9  E   2822  over 0.75  fail 0.00  [1s]
+A  P4 budget-conditioned    beta=1.0  T  173.9  E   2822  over 0.55  fail 0.00  [1s]
+A  P3 Lagrangian            beta=0.9  T  167.8  E   2738  over 0.67  fail 0.00  [1s]
+wrote /home/vichanshu/Desktop/RM/implementation/scripts/../results/U15G5_2U2G/stageA.csv (2100 rows)
+100 cases; B0 = 2744 kJ, T0 = 169.5 min
+B  P0 open-loop (base)                    T  192.1  E   3291  over 1.00  fail 0.000  replans 0.00  [13s]
+B  P0 periodic + road layer               T  186.5  E   3124  over 0.93  fail 0.002  replans 2.65  [14s]
+B  P0 event + road layer                  T  183.5  E   3075  over 0.93  fail 0.000  replans 0.45  [16s]
+B  P0+ (control) open-loop                T  189.2  E   3217  over 0.83  fail 0.001  replans 0.00  [13s]
+B  P0+ (control) event + road layer       T  182.5  E   3062  over 0.78  fail 0.001  replans 0.37  [16s]
+B  P0+ event, road-distance assignment    T  182.1  E   3050  over 0.77  fail 0.001  replans 0.34  [16s]
+B  P4 open-loop                           T  189.5  E   3194  over 0.80  fail 0.002  replans 0.00  [13s]
+B  P4 periodic + road layer               T  187.4  E   3115  over 0.80  fail 0.002  replans 2.73  [15s]
+B  P4 event + road layer                  T  187.5  E   3119  over 0.80  fail 0.002  replans 0.64  [17s]
+B  P3 (beta=0.9) event + road layer       T  174.2  E   2884  over 0.71  fail 0.002  replans 0.33  [16s]
+B  P4 event, road-distance assignment     T  189.3  E   3161  over 0.77  fail 0.002  replans 0.63  [17s]
+B  P0 event, road-distance assignment     T  182.1  E   3027  over 0.88  fail 0.001  replans 0.40  [16s]
+B  P1 route filter, event                 T  145.7  E   2256  over 0.32  fail 0.001  replans 0.34  [136s]
+wrote /home/vichanshu/Desktop/RM/implementation/scripts/../results/U15G5_2U2G/stageB.csv (24700 rows)
+100 cases; B0 = 2744 kJ, T0 = 169.5 min
+S  P0 open-loop (base)                    fail 0.747  n=182
+S  P0 periodic + road layer               fail 0.533  n=182
+S  P0 event + road layer                  fail 0.516  n=182
+S  P4 open-loop                           fail 0.599  n=182
+S  P4 event + road layer                  fail 0.456  n=182
+wrote /home/vichanshu/Desktop/RM/implementation/scripts/../results/U15G5_2U2G/stageS.csv (910 rows)
+Traceback (most recent call last):
+  File "/home/vichanshu/Desktop/RM/implementation/scripts/experiments.py", line 163, in <module>
+    base = load_model(os.path.join(models, "p0.pt"))
+  File "/home/vichanshu/Desktop/RM/implementation/scripts/../src/edr/evaluate.py", line 32, in load_model
+    blob = torch.load(path, map_location="cpu", weights_only=True)
+  File "/home/vichanshu/Desktop/RM/implementation/.venv/lib/python3.13/site-packages/torch/serialization.py", line 1566, in load
+    with _open_file_like(f, "rb") as opened_file:
+         ~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/vichanshu/Desktop/RM/implementation/.venv/lib/python3.13/site-packages/torch/serialization.py", line 796, in _open_file_like
+    return _open_file(name_or_buffer, mode)
+  File "/home/vichanshu/Desktop/RM/implementation/.venv/lib/python3.13/site-packages/torch/serialization.py", line 777, in __init__
+    super().__init__(open(name, mode))  # noqa: SIM115
+                     ~~~~^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/home/vichanshu/Desktop/RM/implementation/scripts/../results/models/U15G5_1U1G/p0.pt'
+ALLDONE

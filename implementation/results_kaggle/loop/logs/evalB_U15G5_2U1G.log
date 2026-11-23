@@ -1,0 +1,16 @@
+100 cases; B0 = 3300 kJ, T0 = 185.9 min
+B  P0 open-loop (base)                    T  210.3  E   3922  over 1.00  fail 0.000  replans 0.00  [90s]
+B  P0 periodic + road layer               T  200.5  E   3708  over 0.93  fail 0.000  replans 2.27  [102s]
+B  P0 event + road layer                  T  200.6  E   3709  over 0.93  fail 0.000  replans 0.44  [118s]
+B  P0+ (control) open-loop                T  195.5  E   3625  over 0.72  fail 0.000  replans 0.00  [87s]
+B  P0+ (control) event + road layer       T  188.8  E   3450  over 0.69  fail 0.000  replans 0.37  [111s]
+B  P0+ event, road-distance assignment    T  188.8  E   3450  over 0.69  fail 0.000  replans 0.37  [109s]
+B  P4 open-loop                           T  199.6  E   3605  over 0.70  fail 0.000  replans 0.00  [90s]
+B  P4 periodic + road layer               T  194.3  E   3476  over 0.69  fail 0.000  replans 2.40  [104s]
+B  P4 event + road layer                  T  194.3  E   3476  over 0.69  fail 0.000  replans 0.59  [112s]
+B  P4 (road-event trained) event          T  190.4  E   3439  over 0.65  fail 0.000  replans 0.55  [99s]
+B  P3 (beta=0.9) event + road layer       T  201.5  E   3684  over 0.84  fail 0.000  replans 0.44  [99s]
+B  P4 event, road-distance assignment     T  194.3  E   3476  over 0.69  fail 0.000  replans 0.59  [110s]
+B  P0 event, road-distance assignment     T  200.6  E   3709  over 0.93  fail 0.000  replans 0.44  [103s]
+B  P1 route filter, event                 T  165.6  E   2857  over 0.41  fail 0.000  replans 0.37  [919s]
+wrote /kaggle/working/edr/scripts/../results/U15G5_2U1G/stageB.csv (26600 rows)

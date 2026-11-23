@@ -1,0 +1,7 @@
+100 cases; B0 = 6423 kJ, T0 = 182.5 min
+S  P0 open-loop (base)                    fail 0.886  n=185
+S  P0 periodic + road layer               fail 0.730  n=185
+S  P0 event + road layer                  fail 0.724  n=185
+S  P4 open-loop                           fail 0.649  n=185
+S  P4 event + road layer                  fail 0.481  n=185
+wrote /kaggle/working/edr/scripts/../results/U15G5_4U2G/stageS.csv (925 rows)

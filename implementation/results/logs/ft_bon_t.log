@@ -1,0 +1,2 @@
+t_ref (mean P0 mission time) = 269.0 min
+[bon_t] step   20  elite T  166.9 E   2795 (sample mean cost  233.1) nll 0.418  | greedy val T  199.2 E   3591 fail 0.00  [  175s]
